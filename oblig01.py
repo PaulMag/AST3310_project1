@@ -5,6 +5,7 @@ c     = 2.998e8       # [m/s]
 sigma = 5.67e-8       # [W/m**2/K**4]
 a     = 4 * sigma / c # [J/m**3/K**4]
 u     = 1.660538921e-27 # [kg]
+avogadro_inverse = 1 / 6.0221413e23
 
 # Initial physical parameters for star:
 L0   = 3.846e26       # [w] # L_sun
@@ -58,6 +59,8 @@ T      = np.zeros(n+1)
 T[0]   = T0
 P      = np.zeros(n+1)
 P[0]   = P0
+P_rad  = np.zeros(n+1)
+P_gas  = np.zeros(n+1)
 
 
 # Particle list:
@@ -71,6 +74,7 @@ class Particle:
         s.mass  = mass  # particle mass
         s.ratio = ratio # total mass ratio
 
+e_  = Particle(9.10938291e31, 0) # electron
 H   = Particle(1.6738e-27, X)
 He3 = Particle(5.0081e-27, Y_3)
 He4 = Particle(6.6464e-27, Y - Y_3)
@@ -83,18 +87,24 @@ def lam(i, j, T):
     T = T / 1e9
 
     if i == H and j == H:
-        return 4.01e-15 * T**(-2/3.) * np.exp(- 3.380 * T**(-1/3.)) \
-               * ( 1 + 0.123 * T**(1/3.) + 1.09 * T**(2/3.) + 0.938 * T )
+        s = 4.01e-15 * T**(-2/3.) * np.exp(- 3.380 * T**(-1/3.)) \
+            * ( 1 + 0.123 * T**(1/3.) + 1.09 * T**(2/3.) + 0.938 * T )
     
-    #if i == He3 and j == H3:
-     #   return 6.04e10 * T**(-2/3.) * exp(- 12.276 T**(-1/3.)) \
-      #         * ( 1 + 0.034 * T**(1/3.) - 0.522 * T**(2/3.) - 0.124 * T \
-       #           + 0.353 * T**(4/3.) + 0.213 * T**(-5/3.) )
+    if i == He3 and j == He3:
+        s = 6.04e10 * T**(-2/3.) * exp(- 12.276 * T**(-1/3.)) \
+            * ( 1 + 0.034 * T**(1/3.) - 0.522 * T**(2/3.) - 0.124 * T \
+               + 0.353 * T**(4/3.) + 0.213 * T**(-5/3.) )
     
-    if (i == H3 and j == H4) or (i == H4 and j == H3):
+    if (i == He3 and j == He4) or (i == He4 and j == He3):
         T_star = T / (1 + 4.95e-2 * T)
-        return 5.61e6 * T_star**(5/6.) * T**(-3/2.) \
-               * exp(- 12.826 * T_star**(-1/3.))
+        s = 5.61e6 * T_star**(5/6.) * T**(-3/2.) \
+            * exp(- 12.826 * T_star**(-1/3.))
+
+    if (i == Be7 and j == e_) or (i == e_ and j == Be7):
+        s = 1.34e-10 * T**(-1/2.) * (1 - 0.537 * T**(1/3.) + 3.86 * T**(2/33)
+            + 0.0027 * T**(-1) * exp(2.515e-3 * T**(-1)))
+
+    return s * avogadro_inverse
 
 
 def r(i, j, rho):
@@ -136,8 +146,8 @@ def kappa(T, rho):
     kappa = 10**kappa_table[i,j] # find value in table and convert back from log
     return kappa * 1000 # convert to [kg/m**3]
 
-    
-"""
+
+
 # Integration loop:
 for i in range(n):
 
@@ -149,4 +159,4 @@ for i in range(n):
     P_rad[i+1] = a / 3. * T[i]**4
     P_gas[i+1] = P - P_rad[i]
     T[i+1] = - 3 * kappa(T[i], rho[i]) * L[i] / (256 * np.pi*np.pi * sigma * r[i]**2 * T[i]**3)
-"""
+

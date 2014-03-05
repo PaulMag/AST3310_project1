@@ -18,18 +18,21 @@ P0   = 1e11           # [Pa]
 
 # Read opacity:
 infile = open("opacity.txt", "r")
-logR = infile.readline()
-logR = logR.split()[1:]
+logR_list = infile.readline()
+logR_list = logR_list.split()[1:]
 infile.readline()
-logT = []
+logT_list = []
 kappa_table = []
 for line in infile:
     line = line.split()
-    logT.append(line.pop(0))
+    logT_list.append(line.pop(0))
     kappa_table.append(line)
-print logT
-print kappa_table
-# TODO convert to float
+
+logT_list, logR_list, kappa_table = np.array(logT_list), np.array(logR_list), np.array(kappa_table)
+logT_list   = logT_list.astype(float)
+logR_list   = logR_list.astype(float)
+kappa_table = kappa_table.astype(float)
+
 
 # Ratios for star:
 X     = 0.7
@@ -107,9 +110,33 @@ def r(i, j, rho):
 
 
 def kappa(T, rho):
-    rho = rho * 0.1 # convert to [g/cm**2]
-    R = rho / T * 1e-6
 
+    logT = np.log10(T)
+    rho = rho * 0.001 # convert to [g/cm**3]
+    logR = np.log10(rho / T * 1e-6)
+
+    i = 0 # this will be the vertical index in kappa_table
+    for logT_l in logT_list:
+        if logT_l > logT: # compare sizes to find the closes
+            if i > 0:
+                if logT - logT_list[i-1] < logT_l - logT: # check if the previous value was closer
+                    i -= 1
+            break # stop checking
+        i += 1
+        
+    j = 0 # this will be the horizontal index in kappa_table
+    for logR_l in logR_list:
+        if logR_l > logR:
+            if j > 0:
+                if logR - logR_list[j-1] < logR_l - logR:
+                    j -= 1
+            break
+        j += 1
+    
+    kappa = 10**kappa_table[i,j] # find value in table and convert back from log
+    return kappa * 1000 # convert to [kg/m**3]
+
+    
 """
 # Integration loop:
 for i in range(n):
@@ -121,5 +148,5 @@ for i in range(n):
     L[i+1] = eps * dm
     P_rad[i+1] = a / 3. * T[i]**4
     P_gas[i+1] = P - P_rad[i]
-    T[i+1] = - 3 * kappa[i] * L[i] / (256 * np.pi*np.pi * sigma * r[i]**2 * T[i]**3)
+    T[i+1] = - 3 * kappa(T[i], rho[i]) * L[i] / (256 * np.pi*np.pi * sigma * r[i]**2 * T[i]**3)
 """

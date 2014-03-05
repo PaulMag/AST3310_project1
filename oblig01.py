@@ -65,58 +65,69 @@ P_gas  = np.zeros(n+1)
 
 # Particle list:
 class Particle:
-    u = 1.660538921e-27 # [kg] # atomic mass unit
 
     def __init__(s, mass, ratio):
+        # particle mass, particle ratio, relative particle density
+        # n = rho_rel * rho
         if mass > 0.5:
             mass *= u # assume mass was given in [u] and convert to [kg]
     
         s.mass  = mass  # particle mass
         s.ratio = ratio # total mass ratio
+        s.rho_rel = ratio / mass
 
-e_  = Particle(9.10938291e31, 0) # electron
 H   = Particle(1.6738e-27, X)
 He3 = Particle(5.0081e-27, Y_3)
 He4 = Particle(6.6464e-27, Y - Y_3)
 Li7 = Particle(7.01600455, Z_7Li)
 Be7 = Particle(7.01692983, Z_7Be)
-
+# Make the electron and set relative particle density to n_e = n_H + n_He
+e_  = Particle(9.10938291e31, 0)
+e_.rho_rel = H.rho_rel + He3.rho_rel + He4.rho_rel
 
 # Functions:
 def lam(i, j, T):
     T = T / 1e9
 
+    # PP I & II & III
     if i == H and j == H:
         s = 4.01e-15 * T**(-2/3.) * np.exp(- 3.380 * T**(-1/3.)) \
             * ( 1 + 0.123 * T**(1/3.) + 1.09 * T**(2/3.) + 0.938 * T )
     
+    # PP I
     if i == He3 and j == He3:
         s = 6.04e10 * T**(-2/3.) * exp(- 12.276 * T**(-1/3.)) \
             * ( 1 + 0.034 * T**(1/3.) - 0.522 * T**(2/3.) - 0.124 * T \
                + 0.353 * T**(4/3.) + 0.213 * T**(-5/3.) )
     
+    # PP II & III
     if (i == He3 and j == He4) or (i == He4 and j == He3):
         T_star = T / (1 + 4.95e-2 * T)
         s = 5.61e6 * T_star**(5/6.) * T**(-3/2.) \
             * exp(- 12.826 * T_star**(-1/3.))
 
+    # PP II
     if (i == Be7 and j == e_) or (i == e_ and j == Be7):
         s = 1.34e-10 * T**(-1/2.) * (1 - 0.537 * T**(1/3.) + 3.86 * T**(2/33)
             + 0.0027 * T**(-1) * exp(2.515e-3 * T**(-1)))
 
+    # PP III
+    if (i == Be7 and j == H):
+        s = 3.11e5 * T**(-2/3.) * exp(- 10.262 * T**(-1/3.)) \
+            + 2.53e3 * T**(-3/2.) * exp(- 7.306 * T**(-1))
+
     return s * avogadro_inverse
 
 
-def r(i, j, rho):
+def r(i, j, rho, T):
 
     if i == j:
-        delta = 1
+        delta_1 = 2 # this is delta + 1
     else:
-        delta = 0
+        delta_1 = 1
 
-    n_i = i.ratio * rho / i.mass
-    n_j = j.ratio * rho / j.mass
-    return n_i * n_j / (rho * (1 + delta))
+    # n_j * n_i / (rho + (1 + delta)) * lambda_ij:
+    return i.rho_rel * j.rho_rel * rho / delta_1 * lam(i, j, T)
 
 
 def kappa(T, rho):
@@ -147,7 +158,7 @@ def kappa(T, rho):
     return kappa * 1000 # convert to [kg/m**3]
 
 
-
+"""
 # Integration loop:
 for i in range(n):
 
@@ -159,4 +170,4 @@ for i in range(n):
     P_rad[i+1] = a / 3. * T[i]**4
     P_gas[i+1] = P - P_rad[i]
     T[i+1] = - 3 * kappa(T[i], rho[i]) * L[i] / (256 * np.pi*np.pi * sigma * r[i]**2 * T[i]**3)
-
+"""

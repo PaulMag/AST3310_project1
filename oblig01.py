@@ -1,10 +1,12 @@
 import numpy as np
 
 # Physical constants:
-c     = 2.998e8       # [m/s]
-sigma = 5.67e-8       # [W/m**2/K**4]
-a     = 4 * sigma / c # [J/m**3/K**4]
+c     = 2.998e8         # [m/s]
+sigma = 5.67e-8         # [W/m**2/K**4]
+a     = 4 * sigma / c   # [J/m**3/K**4]
 u     = 1.660538921e-27 # [kg]
+k     = 1.3806488e-23   # [J/K]
+MeV   = 1.602176565e-13 # [J]
 avogadro_inverse = 1 / 6.0221413e23
 
 # Initial physical parameters for star:
@@ -15,7 +17,6 @@ rho0 = 1e3            # [kg/m**3]
 T0   = 1e5            # [K]
 P0   = 1e11           # [Pa]
 # TODO Do no set all of rho0, T0 and P0. Calculate one of them.
-
 
 # Read opacity:
 infile = open("opacity.txt", "r")
@@ -42,6 +43,28 @@ Y     = 0.29
 Z     = 0.01
 Z_7Li = 1e-5
 Z_7Be = 1e-5
+
+mu = 1. / (2*X + 3*Y/4. + Z/2.)
+
+
+# Q's:
+Q_p_p     =  1.177 * MeV
+Q_d_p     =  5.494 * MeV
+Q_He3_He3 = 12.860 * MeV
+
+Q_He3_He4 =  1.586 * MeV
+Q_Be7_e   =  0.049 * MeV
+Q_Li7_p   = 17.346 * MeV
+
+Q_Be7_p   =  0.137 * MeV
+Q_B8      =  8.367 * MeV
+Q_Be8     =  2.995 * MeV
+
+Q_123 = Q_p_p + Q_d_p # the numbers after Q_ tells which PP chains used this Q
+Q_1   = Q_He3_He3
+Q_23  = Q_He3_He4
+Q_2   = Q_Be7_e + Q_Li7_p      # TODO can I add these?
+Q_3   = Q_Be7_p + Q_B8 + Q_Be8 # TODO can I add these?
 
 # Numerical parameters:
 n = 10000
@@ -81,8 +104,8 @@ He3 = Particle(5.0081e-27, Y_3)
 He4 = Particle(6.6464e-27, Y - Y_3)
 Li7 = Particle(7.01600455, Z_7Li)
 Be7 = Particle(7.01692983, Z_7Be)
-# Make the electron and set relative particle density to n_e = n_H + n_He
-e_  = Particle(9.10938291e31, 0)
+# Make the electron and set relative particle density to n_e = n_H + n_He:
+e_  = Particle(9.10938291e-31, 0)
 e_.rho_rel = H.rho_rel + He3.rho_rel + He4.rho_rel
 
 # Functions:
@@ -96,7 +119,7 @@ def lam(i, j, T):
     
     # PP I
     if i == He3 and j == He3:
-        s = 6.04e10 * T**(-2/3.) * exp(- 12.276 * T**(-1/3.)) \
+        s = 6.04e10 * T**(-2/3.) * np.exp(- 12.276 * T**(-1/3.)) \
             * ( 1 + 0.034 * T**(1/3.) - 0.522 * T**(2/3.) - 0.124 * T \
                + 0.353 * T**(4/3.) + 0.213 * T**(-5/3.) )
     
@@ -104,17 +127,17 @@ def lam(i, j, T):
     if (i == He3 and j == He4) or (i == He4 and j == He3):
         T_star = T / (1 + 4.95e-2 * T)
         s = 5.61e6 * T_star**(5/6.) * T**(-3/2.) \
-            * exp(- 12.826 * T_star**(-1/3.))
+            * np.exp(- 12.826 * T_star**(-1/3.))
 
     # PP II
     if (i == Be7 and j == e_) or (i == e_ and j == Be7):
         s = 1.34e-10 * T**(-1/2.) * (1 - 0.537 * T**(1/3.) + 3.86 * T**(2/33)
-            + 0.0027 * T**(-1) * exp(2.515e-3 * T**(-1)))
+            + 0.0027 * T**(-1) * np.exp(2.515e-3 * T**(-1)))
 
     # PP III
-    if (i == Be7 and j == H):
-        s = 3.11e5 * T**(-2/3.) * exp(- 10.262 * T**(-1/3.)) \
-            + 2.53e3 * T**(-3/2.) * exp(- 7.306 * T**(-1))
+    if (i == Be7 and j == H) or (i == H and j == Be7):
+        s = 3.11e5 * T**(-2/3.) * np.exp(- 10.262 * T**(-1/3.)) \
+            + 2.53e3 * T**(-3/2.) * np.exp(- 7.306 * T**(-1))
 
     return s * avogadro_inverse
 
@@ -158,16 +181,21 @@ def kappa(T, rho):
     return kappa * 1000 # convert to [kg/m**3]
 
 
-"""
+
 # Integration loop:
 for i in range(n):
 
-    eps = 
+    eps =   r(H  , H,   rho[i], T[i]) * Q_123 \
+          + r(He3, He3, rho[i], T[i]) * Q_1   \
+          + r(He3, He4, rho[i], T[i]) * Q_23  \
+          + r(Be7, e_,  rho[i], T[i]) * Q_2   \
+          + r(Be7, H,   rho[i], T[i]) * Q_3
 
+    rho[i+1] = P_gas[i] * mu * u / (k * T[i])
     r[i+1] = 1 / (4 * np.pi * r[i]**2 * rho[i]) * dm
     P[i+1] = - G * m[i] / (4 * np.pi * r[i]) * dm
     L[i+1] = eps * dm
     P_rad[i+1] = a / 3. * T[i]**4
     P_gas[i+1] = P - P_rad[i]
     T[i+1] = - 3 * kappa(T[i], rho[i]) * L[i] / (256 * np.pi*np.pi * sigma * r[i]**2 * T[i]**3)
-"""
+

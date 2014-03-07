@@ -1,3 +1,4 @@
+import os
 import numpy as np
 
 # Physical constants:
@@ -17,6 +18,24 @@ M0   = 0.7 * 1.989e30 # [kg] # 0.7 * M_sun
 rho0 = 1e3            # [kg/m**3]
 T0   = 1e5            # [K]
 P0   = 1e11           # [Pa]
+P_rad0 = a / 3. * T0**4 # [Pa]
+P_gas0 = P0 - P_rad0  # [Pa]
+
+
+# Ratios for star:
+X     = 0.7
+Y_3   = 1e-10
+Y     = 0.29
+Z     = 0.01
+Z_7Li = 1e-5
+Z_7Be = 1e-5
+
+mu = 1. / (2*X + 3*Y/4. + Z/2.)
+
+
+# Do no set all of rho0, T0 and P0. Calculate one of them with equation of state:
+rho0 = P_gas0 * mu * u / (k * T0)
+
 
 # Read opacity:
 infile = open("opacity.txt", "r")
@@ -37,17 +56,6 @@ logR_list   = logR_list.astype(float)
 kappa_table = kappa_table.astype(float)
 kappa_x = len(logR_list)
 kappa_y = len(logT_list)
-
-
-# Ratios for star:
-X     = 0.7
-Y_3   = 1e-10
-Y     = 0.29
-Z     = 0.01
-Z_7Li = 1e-5
-Z_7Be = 1e-5
-
-mu = 1. / (2*X + 3*Y/4. + Z/2.)
 
 
 # Q's:
@@ -75,6 +83,8 @@ Q_3   = Q_Be7_p + Q_B8 + Q_Be8 # can I add these? # Boris said yes, since missin
 n = int(1e12)
 dm = - M0 / float(n)
 outfile = open("luminosity.dat", "w")
+print "n  = ", n
+print "dm = ", dm, "kg"
 
 
 # Set arrays:
@@ -99,13 +109,10 @@ P      = np.zeros(array_size+1)
 P[0]   = P0
 
 P_rad    = np.zeros(array_size+1)
-P_rad[0] = a / 3. * T[0]**4
+P_rad[0] = P_rad0
 
 P_gas    = np.zeros(array_size+1)
-P_gas[0] = P[0] - P_rad[0]
-
-# Do no set all of rho0, T0 and P0. Calculate one of them:
-rho[0] = P_gas[0] * mu * u / (k * T[0])
+P_gas[0] = P_gas0
 
 
 # Particle list:
@@ -222,11 +229,20 @@ def kappa(T, rho):
     return kappa * 1000 # convert to [kg/m**3]
 
 
-outfile.write(str(L[0]))
-print rho[0], R[0], P[0], L[0], P_rad[0], P_gas[0], T[0]
-print "dm = ", dm
+outfile.write(str(L[0]) + "\n")
+
 # Integration loop:
-for i in range(n / 1000000000):
+for i in range(n / 100000000):
+
+    os.system("clear")
+    print "\nProgress = %d / %d =%11.7f" % (i, n, 100.*i/n)
+    print "rho =", rho[0]   / rho0
+    print "P_r =", P_rad[0] / P_rad0
+    print "P_g =", P_gas[0] / P_gas0
+    print "R   =", R[0]     / R0
+    print "P   =", P[0]     / P0
+    print "L   =", L[0]     / L0
+    print "T   =", T[0]     / T0
 
     eps =   rate(H  , H,   rho[0], T[0]) * Q_123 \
           + rate(He3, He3, rho[0], T[0]) * Q_1   \
@@ -242,7 +258,7 @@ for i in range(n / 1000000000):
     P_gas[1] = P[0] - P_rad[0]
 
     R[1] = R[0] + 1. / (4 * np.pi * R[0]**2 * rho[0]) * dm
-    P[1] = P[0] - G * M[0] / (4 * np.pi * R[0]) * dm
+    P[1] = P[0] - G * M[0] / (4 * np.pi * R[0]**4) * dm
     L[1] = L[0] + eps * dm
     T[1] = T[0] - 3 * kappa(T[0], rho[0]) * L[0] \
                   / (256 * np.pi*np.pi * sigma * R[0]**4 * T[0]**3) * dm
@@ -259,9 +275,15 @@ for i in range(n / 1000000000):
     # Check if anything dropped below zero:
     if rho[0] <= 0 or R[0] <= 0 or P[0] <= 0 or L[0] <= 0 or P_rad[0] <= 0 \
        or P_gas[0] <= 0 or T[0] <= 0:
-        print "Something dropped below 0. Stop simulation."
-        print "Progress = %d / %d" % (i, n)
-        print rho[0], R[0], P[0], L[0], P_rad[0], P_gas[0], T[0]
+        print "\nSomething dropped below 0. Stop simulation."
+        print "\nProgress = %d / %d =%11.7f" % (i, n, 100.*i/n)
+        print "rho =", rho[0]   / rho0
+        print "P_r =", P_rad[0] / P_rad0
+        print "P_g =", P_gas[0] / P_gas0
+        print "R   =", R[0]     / R0
+        print "P   =", P[0]     / P0
+        print "L   =", L[0]     / L0
+        print "T   =", T[0]     / T0
         break
 
     # Write to file:

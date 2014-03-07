@@ -6,6 +6,7 @@ sigma = 5.67e-8         # [W/m**2/K**4]
 a     = 4 * sigma / c   # [J/m**3/K**4]
 u     = 1.660538921e-27 # [kg]
 k     = 1.3806488e-23   # [J/K]
+G     = 6.67384e-11     # [m**3/kg/s**2]
 MeV   = 1.602176565e-13 # [J]
 avogadro_inverse = 1 / 6.0221413e23
 
@@ -68,6 +69,7 @@ Q_3   = Q_Be7_p + Q_B8 + Q_Be8 # TODO can I add these?
 
 # Numerical parameters:
 n = 10000
+dm = M0 / float(n)
 
 # Set arrays:
 L      = np.zeros(n+1)
@@ -142,7 +144,7 @@ def lam(i, j, T):
     return s * avogadro_inverse
 
 
-def r(i, j, rho, T):
+def rate(i, j, rho, T):
 
     if i == j:
         delta_1 = 2 # this is delta + 1
@@ -185,17 +187,17 @@ def kappa(T, rho):
 # Integration loop:
 for i in range(n):
 
-    eps =   r(H  , H,   rho[i], T[i]) * Q_123 \
-          + r(He3, He3, rho[i], T[i]) * Q_1   \
-          + r(He3, He4, rho[i], T[i]) * Q_23  \
-          + r(Be7, e_,  rho[i], T[i]) * Q_2   \
-          + r(Be7, H,   rho[i], T[i]) * Q_3
+    eps =   rate(H  , H,   rho[i], T[i]) * Q_123 \
+          + rate(He3, He3, rho[i], T[i]) * Q_1   \
+          + rate(He3, He4, rho[i], T[i]) * Q_23  \
+          + rate(Be7, e_,  rho[i], T[i]) * Q_2   \
+          + rate(Be7, H,   rho[i], T[i]) * Q_3
 
     rho[i+1] = P_gas[i] * mu * u / (k * T[i])
-    r[i+1] = 1 / (4 * np.pi * r[i]**2 * rho[i]) * dm
-    P[i+1] = - G * m[i] / (4 * np.pi * r[i]) * dm
+    R[i+1] = 1 / (4 * np.pi * R[i]**2 * rho[i]) * dm
+    P[i+1] = - G * M[i] / (4 * np.pi * R[i]) * dm
     L[i+1] = eps * dm
     P_rad[i+1] = a / 3. * T[i]**4
-    P_gas[i+1] = P - P_rad[i]
-    T[i+1] = - 3 * kappa(T[i], rho[i]) * L[i] / (256 * np.pi*np.pi * sigma * r[i]**2 * T[i]**3)
+    P_gas[i+1] = P[i] - P_rad[i]
+    T[i+1] = - 3 * kappa(T[i], rho[i]) * L[i] / (256 * np.pi*np.pi * sigma * R[i]**4 * T[i]**3) * dm
 

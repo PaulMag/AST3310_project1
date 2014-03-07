@@ -17,7 +17,6 @@ M0   = 0.7 * 1.989e30 # [kg] # 0.7 * M_sun
 rho0 = 1e3            # [kg/m**3]
 T0   = 1e5            # [K]
 P0   = 1e11           # [Pa]
-# TODO Do no set all of rho0, T0 and P0. Calculate one of them.
 
 # Read opacity:
 infile = open("opacity.txt", "r")
@@ -30,11 +29,14 @@ for line in infile:
     line = line.split()
     logT_list.append(line.pop(0))
     kappa_table.append(line)
+infile.close()
 
 logT_list, logR_list, kappa_table = np.array(logT_list), np.array(logR_list), np.array(kappa_table)
 logT_list   = logT_list.astype(float)
 logR_list   = logR_list.astype(float)
 kappa_table = kappa_table.astype(float)
+kappa_x = len(logR_list)
+kappa_y = len(logT_list)
 
 
 # Ratios for star:
@@ -68,24 +70,40 @@ Q_2   = Q_Be7_e + Q_Li7_p      # TODO can I add these?
 Q_3   = Q_Be7_p + Q_B8 + Q_Be8 # TODO can I add these?
 
 # Numerical parameters:
-n = 10000
-dm = M0 / float(n)
+n = int(1e12)
+dm = - M0 / float(n)
+outfile = open("luminosity.dat", "w")
+
 
 # Set arrays:
-L      = np.zeros(n+1)
+array_size = 1 # + 1
+
+L      = np.zeros(array_size+1)
 L[0]   = L0
-R      = np.zeros(n+1)
+
+R      = np.zeros(array_size+1)
 R[0]   = R0
-M      = np.zeros(n+1)
+
+M      = np.zeros(array_size+1)
 M[0]   = M0
-rho    = np.zeros(n+1)
+
+rho    = np.zeros(array_size+1)
 rho[0] = rho0
-T      = np.zeros(n+1)
+
+T      = np.zeros(array_size+1)
 T[0]   = T0
-P      = np.zeros(n+1)
+
+P      = np.zeros(array_size+1)
 P[0]   = P0
-P_rad  = np.zeros(n+1)
-P_gas  = np.zeros(n+1)
+
+P_rad    = np.zeros(array_size+1)
+P_rad[0] = a / 3. * T[0]**4
+
+P_gas    = np.zeros(array_size+1)
+P_gas[0] = P[0] - P_rad[0]
+
+# Do no set all of rho0, T0 and P0. Calculate one of them:
+rho[0] = P_gas[0] * mu * u / (k * T[0])
 
 
 # Particle list:
@@ -133,15 +151,19 @@ def lam(i, j, T):
 
     # PP II
     if (i == Be7 and j == e_) or (i == e_ and j == Be7):
-        s = 1.34e-10 * T**(-1/2.) * (1 - 0.537 * T**(1/3.) + 3.86 * T**(2/33)
-            + 0.0027 * T**(-1) * np.exp(2.515e-3 * T**(-1)))
+        if T * 1e3 < 1: # T < 1e6
+            s = 1.57e-7 / (e_.rho_rel * rho[0])
+        else:
+            s = 1.34e-10 * T**(-1/2.) * (1 - 0.537 * T**(1/3.) + 3.86 * T**(2/3.)
+                + 0.0027 * T**(-1) * np.exp(2.515e-3 * T**(-1)))
 
     # PP III
     if (i == Be7 and j == H) or (i == H and j == Be7):
         s = 3.11e5 * T**(-2/3.) * np.exp(- 10.262 * T**(-1/3.)) \
             + 2.53e3 * T**(-3/2.) * np.exp(- 7.306 * T**(-1))
 
-    return s * avogadro_inverse
+    #print "LAMBDA = ", s * avogadro_inverse * 1e-6 # for debugging
+    return s * avogadro_inverse * 1e-6 # convert to [m**3/s]
 
 
 def rate(i, j, rho, T):
@@ -163,7 +185,7 @@ def kappa(T, rho):
 
     i = 0 # this will be the vertical index in kappa_table
     for logT_l in logT_list:
-        if logT_l > logT: # compare sizes to find the closes
+        if logT_l > logT: # compare sizes to find the closest
             if i > 0:
                 if logT - logT_list[i-1] < logT_l - logT: # check if the previous value was closer
                     i -= 1
@@ -179,25 +201,58 @@ def kappa(T, rho):
             break
         j += 1
     
+    if i >= kappa_y:
+        i = kappa_y - 1
+        print "Warning: T may have blown the kappa table."
+    
+    if j >= kappa_x:
+        j = kappa_x - 1
+        print "Warning: rho may have blown the kappa table."
+    
     kappa = 10**kappa_table[i,j] # find value in table and convert back from log
     return kappa * 1000 # convert to [kg/m**3]
 
 
-
+outfile.write(str(L[0]))
+print rho[0], R[0], P[0], L[0], P_rad[0], P_gas[0], T[0]
+print "dm = ", dm
 # Integration loop:
-for i in range(n):
+for i in range(n / 1000000000):
 
-    eps =   rate(H  , H,   rho[i], T[i]) * Q_123 \
-          + rate(He3, He3, rho[i], T[i]) * Q_1   \
-          + rate(He3, He4, rho[i], T[i]) * Q_23  \
-          + rate(Be7, e_,  rho[i], T[i]) * Q_2   \
-          + rate(Be7, H,   rho[i], T[i]) * Q_3
+    eps =   rate(H  , H,   rho[0], T[0]) * Q_123 \
+          + rate(He3, He3, rho[0], T[0]) * Q_1   \
+          + rate(He3, He4, rho[0], T[0]) * Q_23  \
+          + rate(Be7, e_,  rho[0], T[0]) * Q_2   \
+          + rate(Be7, H,   rho[0], T[0]) * Q_3
+    #print "eps = ", eps # for debugging
+    
+    rho[1] = P_gas[0] * mu * u / (k * T[0])
+    P_rad[1] = a / 3. * T[0]**4
+    P_gas[1] = P[0] - P_rad[0]
 
-    rho[i+1] = P_gas[i] * mu * u / (k * T[i])
-    R[i+1] = 1 / (4 * np.pi * R[i]**2 * rho[i]) * dm
-    P[i+1] = - G * M[i] / (4 * np.pi * R[i]) * dm
-    L[i+1] = eps * dm
-    P_rad[i+1] = a / 3. * T[i]**4
-    P_gas[i+1] = P[i] - P_rad[i]
-    T[i+1] = - 3 * kappa(T[i], rho[i]) * L[i] / (256 * np.pi*np.pi * sigma * R[i]**4 * T[i]**3) * dm
+    R[1] = R[0] + 1. / (4 * np.pi * R[0]**2 * rho[0]) * dm
+    P[1] = P[0] - G * M[0] / (4 * np.pi * R[0]) * dm
+    L[1] = L[0] + eps * dm
+    T[1] = T[0] - 3 * kappa(T[0], rho[0]) * L[0] \
+                  / (256 * np.pi*np.pi * sigma * R[0]**4 * T[0]**3) * dm
+
+    # Reset stuff:
+    rho[0] = rho[1]
+    R[0]   = R[1]
+    P[0]   = P[1]
+    L[0]   = L[1]
+    P_rad[0] = P_rad[1]
+    P_gas[0] = P_gas[1]
+    T[0]   = T[1]
+
+    # Check if anything dropped below zero:
+    if rho[0] <= 0 or R[0] <= 0 or P[0] <= 0 or L[0] <= 0 or P_rad[0] <= 0 \
+       or P_gas[0] <= 0 or T[0] <= 0:
+        print "Something dropped below 0. Stop simulation."
+        print "Progress = %d / %d" % (i, n)
+        print rho[0], R[0], P[0], L[0], P_rad[0], P_gas[0], T[0]
+        break
+
+    # Write to file:
+    outfile.write(str(L[0]))
 

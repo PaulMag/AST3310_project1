@@ -66,8 +66,10 @@ Q_Be8     =  2.995 * MeV
 Q_123 = Q_p_p + Q_d_p # the numbers after Q_ tells which PP chains used this Q
 Q_1   = Q_He3_He3
 Q_23  = Q_He3_He4
-Q_2   = Q_Be7_e + Q_Li7_p      # TODO can I add these?
-Q_3   = Q_Be7_p + Q_B8 + Q_Be8 # TODO can I add these?
+#Q_2   = Q_Be7_e + Q_Li7_p      # can I add these? # ended up not
+Q_2a  = Q_Be7_e
+Q_2b  = Q_Li7_p
+Q_3   = Q_Be7_p + Q_B8 + Q_Be8 # can I add these? # Boris said yes, since missing
 
 # Numerical parameters:
 n = int(1e12)
@@ -132,38 +134,45 @@ e_.rho_rel = H.rho_rel + He3.rho_rel + He4.rho_rel
 def lam(i, j, T):
     T = T / 1e9
 
-    # PP I & II & III
+    # PP I & II & III:
     if i == H and j == H:
         s = 4.01e-15 * T**(-2/3.) * np.exp(- 3.380 * T**(-1/3.)) \
             * ( 1 + 0.123 * T**(1/3.) + 1.09 * T**(2/3.) + 0.938 * T )
     
-    # PP I
+    # PP I:
     if i == He3 and j == He3:
         s = 6.04e10 * T**(-2/3.) * np.exp(- 12.276 * T**(-1/3.)) \
             * ( 1 + 0.034 * T**(1/3.) - 0.522 * T**(2/3.) - 0.124 * T \
                + 0.353 * T**(4/3.) + 0.213 * T**(-5/3.) )
     
-    # PP II & III
+    # PP II & III:
     if (i == He3 and j == He4) or (i == He4 and j == He3):
         T_star = T / (1 + 4.95e-2 * T)
         s = 5.61e6 * T_star**(5/6.) * T**(-3/2.) \
             * np.exp(- 12.826 * T_star**(-1/3.))
 
-    # PP II
+    # PP II:
     if (i == Be7 and j == e_) or (i == e_ and j == Be7):
         if T * 1e3 < 1: # T < 1e6
             s = 1.57e-7 / (e_.rho_rel * rho[0])
         else:
             s = 1.34e-10 * T**(-1/2.) * (1 - 0.537 * T**(1/3.) + 3.86 * T**(2/3.)
                 + 0.0027 * T**(-1) * np.exp(2.515e-3 * T**(-1)))
+    
+    if (i == Li7 and j == H) or (i == H and j == Li7):
+        T_star = T / (1 + 0.759 * T)
+        s = 1.096e9 * T**(-2/3.) * np.exp(- 8.472 * T**(-1/3.)) \
+            - 4.830e8 * T_star**(5/6.) * T**(-2/3.) \
+            * np.exp(- 8.472 * T_star**(-1/3.)) \
+            + 1.06e10 * T**(-3/2.) * np.exp(- 30.442 * T**(-1))
 
-    # PP III
+    # PP III:
     if (i == Be7 and j == H) or (i == H and j == Be7):
         s = 3.11e5 * T**(-2/3.) * np.exp(- 10.262 * T**(-1/3.)) \
             + 2.53e3 * T**(-3/2.) * np.exp(- 7.306 * T**(-1))
 
     #print "LAMBDA = ", s * avogadro_inverse * 1e-6 # for debugging
-    return s * avogadro_inverse * 1e-6 # convert to [m**3/s]
+    return s * 1e-6 # convert to [m**3/s]
 
 
 def rate(i, j, rho, T):
@@ -222,9 +231,11 @@ for i in range(n / 1000000000):
     eps =   rate(H  , H,   rho[0], T[0]) * Q_123 \
           + rate(He3, He3, rho[0], T[0]) * Q_1   \
           + rate(He3, He4, rho[0], T[0]) * Q_23  \
-          + rate(Be7, e_,  rho[0], T[0]) * Q_2   \
+          + rate(Be7, e_,  rho[0], T[0]) * Q_2a  \
+          + rate(Li7, H,   rho[0], T[0]) * Q_2b  \
           + rate(Be7, H,   rho[0], T[0]) * Q_3
-    #print "eps = ", eps # for debugging
+    eps *=  avogadro_inverse
+    print "eps = ", eps # for debugging
     
     rho[1] = P_gas[0] * mu * u / (k * T[0])
     P_rad[1] = a / 3. * T[0]**4
@@ -254,5 +265,5 @@ for i in range(n / 1000000000):
         break
 
     # Write to file:
-    outfile.write(str(L[0]))
+    outfile.write(str(L[0]) + "\n")
 

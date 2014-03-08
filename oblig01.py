@@ -36,7 +36,10 @@ mu = 1. / (2*X + 3*Y/4. + Z/2.)
 
 
 # Do no set all of rho0, T0 and P0. Calculate one of them with equation of state:
-rho0 = P_gas0 * mu * u / (k * T0)
+#rho0  = P_gas0 * mu * u / (k * T0)
+#T0     = P_gas0 * mu * u / (k * rho0)
+P0     = rho0 * k * T0 / (mu * u) + P_rad0
+P_gas0 = P0 - P_rad0
 
 
 # Read opacity:
@@ -83,15 +86,15 @@ Q_3   = Q_Be7_p + Q_B8 + Q_Be8 # can I add these? # Boris said yes, since missin
 
 # Numerical parameters:
 n = int(2e7)
+resolution = 5000 # how often to show progress and write to file
 #dm = - M0 / float(n)
-outfile = open("luminosity.dat", "w")
 
 M          = np.zeros(n+1)
 M[0:n/2]   = np.logspace(np.log10(.001), np.log10(.18 - 1./n), n/2)
 M[n/2:n+1] = np.linspace(0.18, 1.00, n/2 + 1)
 M *= - M0
 
-#plt.plot(dm)
+#plt.plot(M)
 #plt.show()
 
 print "n  = %e" % n
@@ -237,20 +240,12 @@ def kappa(T, rho):
     return kappa * 1000 # convert to [kg/m**3]
 
 
-outfile.write(str(L[0]) + "\n")
+# Data output:
+outfile = open("data/" + sys.argv[1] + ".dat", "w")
+outfile.write(sys.argv[2] + "\n") # write intention of current run on first line
 
 # Integration loop:
-for i in range(n / 100000):
-
-    os.system("clear")
-    print "\nProgress = %d / %d =%11.7f %%" % (i, n, 100.*i/n)
-    print "rho =", rho[0]   / rho0, "rho0"
-    print "P_r =", P_rad[0] / P0,   "P0"
-    print "P_g =", P_gas[0] / P0,   "P0"
-    print "R   =", R[0]     / R0,   "R0"
-    print "P   =", P[0]     / P0,   "P0"
-    print "L   =", L[0]     / L0,   "L0"
-    print "T   =", T[0]     / T0,   "T0"
+for i in range(n):
 
     eps =   rate(H  , H,   rho[0], T[0]) * Q_123 \
           + rate(He3, He3, rho[0], T[0]) * Q_1   \
@@ -259,9 +254,23 @@ for i in range(n / 100000):
           + rate(Li7, H,   rho[0], T[0]) * Q_2b  \
           + rate(Be7, H,   rho[0], T[0]) * Q_3
     eps *=  avogadro_inverse
-    print "eps = ", eps # for debugging
     
     dm = M[i+1] - M[i]
+    
+    # Sometimes print out current progress in terminal and outfile:
+    if i % resolution == 0:
+        print "\nProgress = %d / %d =%10.6f %%" % (i, n, 100.*i/n)
+        print "rho =", rho[0]   / rho0, "rho0"
+        print "P_r =", P_rad[0] / P0,   "P0"
+        print "P_g =", P_gas[0] / P0,   "P0"
+        print "R   =", R[0]     / R0,   "R0"
+        print "P   =", P[0]     / P0,   "P0"
+        print "L   =", L[0]     / L0,   "L0"
+        print "T   =", T[0]     / T0,   "T0"
+        print "eps =", eps
+        print "dm  =", dm
+        outfile.write("%g %g %g %g %g %g %g %g\n" \
+                      % (dm, M[i], rho[0], R[0], P[0], L[0], T[0], eps))
     
     rho[1] = P_gas[0] * mu * u / (k * T[0])
     P_rad[1] = a / 3. * T[0]**4
@@ -285,7 +294,7 @@ for i in range(n / 100000):
     # Check if anything dropped below zero:
     if rho[0] <= 0 or R[0] <= 0 or P[0] <= 0 or L[0] <= 0 or P_rad[0] <= 0 \
        or P_gas[0] <= 0 or T[0] <= 0:
-        print "\nSomething dropped below 0. Stop simulation."
+        print "\nWARNING!\nSomething dropped below 0. Simulation stopped."
         print "\nProgress = %d / %d =%11.7f %%" % (i, n, 100.*i/n)
         print "rho =", rho[0]   / rho0, "rho0"
         print "P_r =", P_rad[0] / P0,   "P0"
@@ -294,8 +303,11 @@ for i in range(n / 100000):
         print "P   =", P[0]     / P0,   "P0"
         print "L   =", L[0]     / L0,   "L0"
         print "T   =", T[0]     / T0,   "T0"
+        print "eps =", eps
+        print "dm  =", dm
         break
 
-    # Write to file:
-    outfile.write(str(L[0]) + "\n")
+outfile.write("%g %g %g %g %g %g %g %g" \
+              % (dm, M[i], rho[0], R[0], P[0], L[0], T[0], eps)) # save last point
+outfile.close()
 

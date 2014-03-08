@@ -1,5 +1,7 @@
 import os
 import numpy as np
+import sys
+import matplotlib.pyplot as plt
 
 # Physical constants:
 c     = 2.998e8         # [m/s]
@@ -80,11 +82,20 @@ Q_2b  = Q_Li7_p
 Q_3   = Q_Be7_p + Q_B8 + Q_Be8 # can I add these? # Boris said yes, since missing
 
 # Numerical parameters:
-n = int(1e12)
-dm = - M0 / float(n)
+n = int(2e7)
+#dm = - M0 / float(n)
 outfile = open("luminosity.dat", "w")
-print "n  = ", n
-print "dm = ", dm, "kg"
+
+M          = np.zeros(n+1)
+M[0:n/2]   = np.logspace(np.log10(.001), np.log10(.18 - 1./n), n/2)
+M[n/2:n+1] = np.linspace(0.18, 1.00, n/2 + 1)
+M *= - M0
+
+#plt.plot(dm)
+#plt.show()
+
+print "n  = %e" % n
+print "dm_start = %e\ndm_end   = %e" % (M[1]-M[0], M[-1]-M[-2])
 
 
 # Set arrays:
@@ -95,9 +106,6 @@ L[0]   = L0
 
 R      = np.zeros(array_size+1)
 R[0]   = R0
-
-M      = np.zeros(array_size+1)
-M[0]   = M0
 
 rho    = np.zeros(array_size+1)
 rho[0] = rho0
@@ -232,17 +240,17 @@ def kappa(T, rho):
 outfile.write(str(L[0]) + "\n")
 
 # Integration loop:
-for i in range(n / 100000000):
+for i in range(n / 100000):
 
     os.system("clear")
-    print "\nProgress = %d / %d =%11.7f" % (i, n, 100.*i/n)
-    print "rho =", rho[0]   / rho0
-    print "P_r =", P_rad[0] / P_rad0
-    print "P_g =", P_gas[0] / P_gas0
-    print "R   =", R[0]     / R0
-    print "P   =", P[0]     / P0
-    print "L   =", L[0]     / L0
-    print "T   =", T[0]     / T0
+    print "\nProgress = %d / %d =%11.7f %%" % (i, n, 100.*i/n)
+    print "rho =", rho[0]   / rho0, "rho0"
+    print "P_r =", P_rad[0] / P0,   "P0"
+    print "P_g =", P_gas[0] / P0,   "P0"
+    print "R   =", R[0]     / R0,   "R0"
+    print "P   =", P[0]     / P0,   "P0"
+    print "L   =", L[0]     / L0,   "L0"
+    print "T   =", T[0]     / T0,   "T0"
 
     eps =   rate(H  , H,   rho[0], T[0]) * Q_123 \
           + rate(He3, He3, rho[0], T[0]) * Q_1   \
@@ -252,6 +260,8 @@ for i in range(n / 100000000):
           + rate(Be7, H,   rho[0], T[0]) * Q_3
     eps *=  avogadro_inverse
     print "eps = ", eps # for debugging
+    
+    dm = M[i+1] - M[i]
     
     rho[1] = P_gas[0] * mu * u / (k * T[0])
     P_rad[1] = a / 3. * T[0]**4
@@ -276,14 +286,14 @@ for i in range(n / 100000000):
     if rho[0] <= 0 or R[0] <= 0 or P[0] <= 0 or L[0] <= 0 or P_rad[0] <= 0 \
        or P_gas[0] <= 0 or T[0] <= 0:
         print "\nSomething dropped below 0. Stop simulation."
-        print "\nProgress = %d / %d =%11.7f" % (i, n, 100.*i/n)
-        print "rho =", rho[0]   / rho0
-        print "P_r =", P_rad[0] / P_rad0
-        print "P_g =", P_gas[0] / P_gas0
-        print "R   =", R[0]     / R0
-        print "P   =", P[0]     / P0
-        print "L   =", L[0]     / L0
-        print "T   =", T[0]     / T0
+        print "\nProgress = %d / %d =%11.7f %%" % (i, n, 100.*i/n)
+        print "rho =", rho[0]   / rho0, "rho0"
+        print "P_r =", P_rad[0] / P0,   "P0"
+        print "P_g =", P_gas[0] / P0,   "P0"
+        print "R   =", R[0]     / R0,   "R0"
+        print "P   =", P[0]     / P0,   "P0"
+        print "L   =", L[0]     / L0,   "L0"
+        print "T   =", T[0]     / T0,   "T0"
         break
 
     # Write to file:

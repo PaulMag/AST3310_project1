@@ -36,10 +36,10 @@ mu = 1. / (2*X + 3*Y/4. + Z/2.)
 
 
 # Do no set all of rho0, T0 and P0. Calculate one of them with equation of state:
-#rho0  = P_gas0 * mu * u / (k * T0)
+rho0  = P_gas0 * mu * u / (k * T0)
 #T0     = P_gas0 * mu * u / (k * rho0)
-P0     = rho0 * k * T0 / (mu * u) + P_rad0
-P_gas0 = P0 - P_rad0
+#P0     = rho0 * k * T0 / (mu * u) + P_rad0
+#P_gas0 = P0 - P_rad0
 
 
 # Read opacity:
@@ -85,17 +85,18 @@ Q_2b  = Q_Li7_p
 Q_3   = Q_Be7_p + Q_B8 + Q_Be8 # can I add these? # Boris said yes, since missing
 
 # Numerical parameters:
-n = int(2e7)
+n = int(2e5)
 resolution = 5000 # how often to show progress and write to file
 #dm = - M0 / float(n)
 
+# Mass in decreased slowly at first, then linearly:
 M          = np.zeros(n+1)
 M[0:n/2]   = np.logspace(np.log10(.001), np.log10(.18 - 1./n), n/2)
 M[n/2:n+1] = np.linspace(0.18, 1.00, n/2 + 1)
-M *= - M0
+M = M0 - M * M0
 
-#plt.plot(M)
-#plt.show()
+plt.plot(M)
+plt.show()
 
 print "n  = %e" % n
 print "dm_start = %e\ndm_end   = %e" % (M[1]-M[0], M[-1]-M[-2])

@@ -29,17 +29,17 @@ X     = 0.7
 Y_3   = 1e-10
 Y     = 0.29
 Z     = 0.01
-Z_7Li = 1e-5
-Z_7Be = 1e-5
+Z_7Li = 1e-13
+Z_7Be = 1e-13
 
 mu = 1. / (2*X + 3*Y/4. + Z/2.)
 
 
 # Do no set all of rho0, T0 and P0. Calculate one of them with equation of state:
-rho0  = P_gas0 * mu * u / (k * T0)
+#rho0  = P_gas0 * mu * u / (k * T0)
 #T0     = P_gas0 * mu * u / (k * rho0)
-#P0     = rho0 * k * T0 / (mu * u) + P_rad0
-#P_gas0 = P0 - P_rad0
+P0     = rho0 * k * T0 / (mu * u) + P_rad0
+P_gas0 = P0 - P_rad0
 
 
 # Read opacity:
@@ -85,7 +85,7 @@ Q_2b  = Q_Li7_p
 Q_3   = Q_Be7_p + Q_B8 + Q_Be8 # can I add these? # Boris said yes, since missing
 
 # Numerical parameters:
-n = int(2e5)
+n = int(2e7)
 resolution = 5000 # how often to show progress and write to file
 #dm = - M0 / float(n)
 
@@ -95,8 +95,8 @@ M[0:n/2]   = np.logspace(np.log10(.001), np.log10(.18 - 1./n), n/2)
 M[n/2:n+1] = np.linspace(0.18, 1.00, n/2 + 1)
 M = M0 - M * M0
 
-plt.plot(M)
-plt.show()
+#plt.plot(M)
+#plt.show()
 
 print "n  = %e" % n
 print "dm_start = %e\ndm_end   = %e" % (M[1]-M[0], M[-1]-M[-2])
@@ -261,15 +261,16 @@ for i in range(n):
     # Sometimes print out current progress in terminal and outfile:
     if i % resolution == 0:
         print "\nProgress = %d / %d =%10.6f %%" % (i, n, 100.*i/n)
+        print "dm  =", dm
+        print "M   =", M[i]     / M0,   "M0"
         print "rho =", rho[0]   / rho0, "rho0"
-        print "P_r =", P_rad[0] / P0,   "P0"
-        print "P_g =", P_gas[0] / P0,   "P0"
         print "R   =", R[0]     / R0,   "R0"
         print "P   =", P[0]     / P0,   "P0"
+        print "P_r =", P_rad[0] / P0,   "P0"
+        print "P_g =", P_gas[0] / P0,   "P0"
         print "L   =", L[0]     / L0,   "L0"
         print "T   =", T[0]     / T0,   "T0"
         print "eps =", eps
-        print "dm  =", dm
         outfile.write("%g %g %g %g %g %g %g %g\n" \
                       % (dm, M[i], rho[0], R[0], P[0], L[0], T[0], eps))
     
@@ -297,15 +298,16 @@ for i in range(n):
        or P_gas[0] <= 0 or T[0] <= 0:
         print "\nWARNING!\nSomething dropped below 0. Simulation stopped."
         print "\nProgress = %d / %d =%11.7f %%" % (i, n, 100.*i/n)
+        print "dm  =", dm
+        print "M   =", M[i]     / M0,   "M0"
         print "rho =", rho[0]   / rho0, "rho0"
-        print "P_r =", P_rad[0] / P0,   "P0"
-        print "P_g =", P_gas[0] / P0,   "P0"
         print "R   =", R[0]     / R0,   "R0"
         print "P   =", P[0]     / P0,   "P0"
+        print "P_r =", P_rad[0] / P0,   "P0"
+        print "P_g =", P_gas[0] / P0,   "P0"
         print "L   =", L[0]     / L0,   "L0"
         print "T   =", T[0]     / T0,   "T0"
         print "eps =", eps
-        print "dm  =", dm
         break
 
 outfile.write("%g %g %g %g %g %g %g %g" \

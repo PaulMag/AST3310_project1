@@ -312,10 +312,10 @@ for i in range(n):
 
     # Differential equations solved with Forward Euler:
     R[1] = R[0] + 1. / (4. * np.pi * R[0]**2 * rho) * dm
-    P[1] = P[0] - G * M[0] / (4. * np.pi * R[0]**4) * dm
+    P[1] = P[0] - G * M[0] / (4. * np.pi * R[1]**4) * dm
     L[1] = L[0] + eps * dm
-    T[1] = T[0] - 3 * kap * L[0] \
-                  / (256. * np.pi*np.pi * sigma * R[0]**4 * T[0]**3) * dm
+    T[1] = T[0] - 3 * kap * L[1] \
+                  / (256. * np.pi*np.pi * sigma * R[1]**4 * T[0]**3) * dm
 
     # Reset variables so they are ready for the next iteration:
     R[0]   = R[1]

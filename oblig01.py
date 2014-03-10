@@ -267,8 +267,16 @@ def kappa(T, rho):
 
 
 # Data output:
-outfile = open("data/" + sys.argv[1] + ".dat", "w") # output file for results cmd-line-arg as filename
-outfile.write(sys.argv[2] + "\n") # write information about current run on first line
+if len(sys.argv) < 2: # if no output name given
+    sys.argv.append("test") # default name
+    print "Outfile 'data/test.dat' was made."
+if len(sys.argv) < 3: # if no info given
+    sys.argv.append("") # set empty string
+
+# Output file for results cmd-line-arg as filename:
+outfile = open("data/" + sys.argv[1] + ".dat", "w")
+# If desirable, write information about current run on first line:
+outfile.write(sys.argv[2] + "\n")
 
 
 # Integration loop:

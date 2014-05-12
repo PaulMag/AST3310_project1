@@ -95,7 +95,7 @@ kappa_y = len(logT_list)
 
 
 # Numerical parameters:
-n = int(2e7) # total number of iteration steps
+n = int(2e5) # total number of iteration steps
 resolution = 5000 # how often to show progress and write to file
 
 # Make an array of the mass distribution:
@@ -106,9 +106,20 @@ M = M0 - M * M0
 # Now the mass is decreased slowly at first, then gradually faster.
 # This means that dm will be very small at the beginning, then converge to a
 # constant size. The following plot demonstrates this:
-#plt.plot(M)
-#plt.show()
-#sys.exit(0)
+if sys.argv[1] == "dmdemo":
+    dm = np.zeros(n+1)
+    for i in range(1, n+1):
+        dm[i] = M[i] - M[i-1]
+    dm /= np.min(dm)
+    M  /= np.max(M)
+    plt.plot(dm); plt.hold("on")
+    plt.plot(M)
+    plt.title("dm demonstration")
+    plt.legend(["dm", "mass"])
+    plt.xlabel("steps"); plt.ylabel("relative to max value")
+    plt.show()
+    sys.exit(0)
+
 # Display the total number of steps (if simulation is able to complete)
 # and the initial and final size of mass step dm:
 print "n  = %e" % n

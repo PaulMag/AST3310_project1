@@ -23,17 +23,6 @@ delta    = 1.     # ideal gases
 con_stable = True # initial assumption
 
 
-# Initial physical parameters for star:
-L0   = 3.846e26       # [w]       # 1.0 * L_sun
-R0   = 0.5 * 6.96e8   # [m]       # 0.5 * R_sun
-M0   = 0.7 * 1.989e30 # [kg]      # 0.7 * M_sun
-rho0 = 1e3            # [kg/m**3]
-T0   = 1e5            # [K]
-P0   = 1e11           # [Pa]
-P_rad0 = a / 3. * T0**4 # [Pa]
-P_gas0 = P0 - P_rad0  # [Pa]
-
-
 # Ratios of different particles for star:
 X     = 0.7   # hydrogen
 Y_3   = 1e-10 # helium3
@@ -45,11 +34,15 @@ Z_7Be = 1e-13 # beryllium7
 mu = 1. / (2*X + 3*Y/4. + Z/2.) # average particle mass in atomic mass units
 
 
-# Do no set all of rho0, T0 and P0. Calculate one of them with the equation of state:
-#rho0  = P_gas0 * mu * u / (k * T0)
-#T0     = P_gas0 * mu * u / (k * rho0)
-P0     = rho0 * k * T0 / (mu * u) + P_rad0
-P_gas0 = P0 - P_rad0
+# Initial physical parameters for star:
+R0   = 1.0 * 6.96e8   # [m]       # x * R_sun
+L0   = 1.0 * 3.846e26 # [w]       # x * L_sun
+M0   = 1.0 * 1.989e30 # [kg]      # x * M_sun
+T0   = 5770           # [K]       # T_eff_sun
+rho0 = 4.0e-4         # [kg/m**3]
+P_rad0 = a / 3. * T0**4           # [Pa]
+P_gas0 = rho0 * k * T0 / (mu * u) # [Pa] # equation of state
+P0     = P_gas0 + P_rad0          # [Pa]
 
 
 # Q's:

@@ -16,6 +16,13 @@ MeV   = 1.602176565e-13 # [J]
 avogadro_inverse = 1 / 6.0221413e23 # the inverse of Avogadros number
 
 
+# Convection parameters:
+nabla_ad = 2. / 5 # adiabatic temperature gradient for ideal gas
+alpha    = 1.     # mixing length
+delta    = 1.     # ideal gases
+con_stable = True # initial assumption
+
+
 # Initial physical parameters for star:
 L0   = 3.846e26       # [w]       # 1.0 * L_sun
 R0   = 0.5 * 6.96e8   # [m]       # 0.5 * R_sun
@@ -95,7 +102,7 @@ kappa_y = len(logT_list)
 
 
 # Numerical parameters:
-n = int(2e5) # total number of iteration steps
+n = int(2e7) # total number of iteration steps
 resolution = 5000 # how often to show progress and write to file
 
 # Make an array of the mass distribution:
@@ -280,18 +287,19 @@ def kappa(T, rho):
 # Data output:
 if len(sys.argv) < 2: # if no output name given
     sys.argv.append("test") # default name
-    print "Outfile 'data/test.dat' was made."
+    print "Outfile 'data2/test.dat' was made."
 if len(sys.argv) < 3: # if no info given
     sys.argv.append("") # set empty string
 
 # Output file for results cmd-line-arg as filename:
-outfile = open("data/" + sys.argv[1] + ".dat", "w")
+outfile = open("data2/" + sys.argv[1] + ".dat", "w")
 # If desirable, write information about current run on first line:
 outfile.write(sys.argv[2] + "\n")
 
 
 # Integration loop:
 for i in range(n):
+
 
     # Parameters that can be found instantaneously:
     P_rad = a / 3. * T[0]**4
@@ -325,9 +333,20 @@ for i in range(n):
         print "T   =", T[0]  / T0,   "T0"
         print "eps =", eps
         print "kap =", kap
+        print con_stable
         outfile.write("%g %f %g %g %g %g %g %g %g\n" \
                       % (dm, M[i], rho, R[0], P[0], L[0], T[0], eps, kap))
             # writes the current result to file for later plotting
+
+    # TODO: Check for convective stabbility:
+    #nabla_rad = (np.log(T[1] - np.log(T[0])) / (np.log(P[1] - np.log(P[0]))
+    nabla_rad = 3. * kap * L[0] * P[0] / \
+                ( 64. * np.pi * sigma * T[0]*T[0]*T[0]*T[0] * G * M[i] )
+    
+    if nabla_rad > nabla_ad:
+        con_stable = False
+    else:
+        con_stable = True
 
     # Differential equations solved with Forward Euler:
     R[1] = R[0] + 1. / (4. * np.pi * R[0]**2 * rho) * dm

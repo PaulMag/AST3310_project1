@@ -4,10 +4,10 @@ import sys
 
 if len(sys.argv) < 2:
     print "Usage: python plot.py name_of_datafile"
-    print "Datafile is assumed to be in folder 'data/' and have the extension '.dat'."
+    print "Datafile is assumed to be in folder 'data2/' and have the extension '.dat'."
     sys.exit(1)
 
-infile = open("data/" + sys.argv[1] + ".dat", "r")
+infile = open("data2/" + sys.argv[1] + ".dat", "r")
 
 info = infile.readline() # the first line only contains potential extra info
 

@@ -95,35 +95,15 @@ kappa_y = len(logT_list)
 
 
 # Numerical parameters:
-n = int(2e7) # total number of iteration steps
+i = 0
 resolution = 5000 # how often to show progress and write to file
 
-# Make an array of the mass distribution:
-M          = np.zeros(n+1)
-M[0:n/2]   = np.logspace(np.log10(.001), np.log10(.18 - 1./n), n/2) # logaritmic first half
-M[n/2:n+1] = np.linspace(0.18, 1.00, n/2 + 1) # linearly second half
-M = M0 - M * M0
-# Now the mass is decreased slowly at first, then gradually faster.
-# This means that dm will be very small at the beginning, then converge to a
-# constant size. The following plot demonstrates this:
-if sys.argv[1] == "dmdemo":
-    dm = np.zeros(n+1)
-    for i in range(1, n+1):
-        dm[i] = M[i] - M[i-1]
-    dm /= np.min(dm)
-    M  /= np.max(M)
-    plt.plot(dm); plt.hold("on")
-    plt.plot(M)
-    plt.title("dm demonstration")
-    plt.legend(["dm", "mass"])
-    plt.xlabel("steps"); plt.ylabel("relative to max value")
-    plt.show()
-    sys.exit(0)
+dm_min = - 1e15
+dm_max = - 1e25
+dm = dm_min
 
-# Display the total number of steps (if simulation is able to complete)
-# and the initial and final size of mass step dm:
-print "n  = %e" % n
-print "dm_start = %e\ndm_end   = %e" % (M[1]-M[0], M[-1]-M[-2])
+diff_min = 0.001
+diff_max = 0.01
 
 
 # Make placeholders for variables:
@@ -144,6 +124,8 @@ T[0]   = T0
 
 P      = np.zeros(array_size+1)
 P[0]   = P0
+
+M      = M0
 
 #rho      = np.zeros(array_size+1)
 #P_rad    = np.zeros(array_size+1)
@@ -267,11 +249,11 @@ def kappa(T, rho):
     # take one step back to avoid IndexOutOfBoundsError:
     if i >= kappa_y:
         i = kappa_y - 1
-        print "Warning: T may have blown the kappa table."
+        #print "Warning: T may have blown the kappa table."
     
     if j >= kappa_x:
         j = kappa_x - 1
-        print "Warning: rho may have blown the kappa table."
+        #print "Warning: rho may have blown the kappa table."
     
     kappa = 10**kappa_table[i,j] # find value in table and convert back from log
     return kappa * 1000 # convert to [kg/m**3]
@@ -291,7 +273,7 @@ outfile.write(sys.argv[2] + "\n")
 
 
 # Integration loop:
-for i in range(n):
+while True:
 
 
     # Parameters that can be found instantaneously:
@@ -310,13 +292,10 @@ for i in range(n):
 
     kap = kappa(T[0], rho) # find opacity
 
-    dm = M[i+1] - M[i] # mass difference
-
     # Sometimes print out current progress in terminal and outfile:
     if i % resolution == 0:
-        print "\nProgress = %d / %d =%10.6f %%" % (i, n, 100.*i/n)
         print "dm  =", dm
-        print "M   =", M[i]  / M0,   "M0"
+        print "M   =", M     / M0,   "M0"
         print "rho =", rho   / rho0, "rho0"
         print "R   =", R[0]  / R0,   "R0"
         print "P   =", P[0]  / P0,   "P0"
@@ -328,13 +307,14 @@ for i in range(n):
         print "kap =", kap
         print con_stable
         outfile.write("%g %f %g %g %g %g %g %g %g\n" \
-                      % (dm, M[i], rho, R[0], P[0], L[0], T[0], eps, kap))
+                      % (dm, M, rho, R[0], P[0], L[0], T[0], eps, kap))
             # writes the current result to file for later plotting
+    i += 1
 
     # TODO: Check for convective stabbility:
     #nabla_rad = (np.log(T[1] - np.log(T[0])) / (np.log(P[1] - np.log(P[0]))
     nabla_rad = 3. * kap * L[0] * P[0] / \
-                ( 64. * np.pi * sigma * T[0]*T[0]*T[0]*T[0] * G * M[i] )
+                ( 64. * np.pi * sigma * T[0]*T[0]*T[0]*T[0] * G * M )
     
     if nabla_rad > nabla_ad:
         con_stable = False
@@ -342,11 +322,28 @@ for i in range(n):
         con_stable = True
 
     # Differential equations solved with Forward Euler:
-    R[1] = R[0] + 1. / (4. * np.pi * R[0]**2 * rho) * dm
-    P[1] = P[0] - G * M[0] / (4. * np.pi * R[1]**4) * dm
-    L[1] = L[0] + eps * dm
-    T[1] = T[0] - 3 * kap * L[1] \
+    dR = + 1. / (4. * np.pi * R[0]**2 * rho) * dm
+    dP = - G * M / (4. * np.pi * R[1]**4) * dm
+    dL = + eps * dm
+    dT = - 3 * kap * L[1] \
                   / (256. * np.pi*np.pi * sigma * R[1]**4 * T[0]**3) * dm
+
+    R[1] = R[0] + dR
+    P[1] = P[0] + dP
+    L[1] = L[0] + dL
+    T[1] = T[0] + dT
+    
+    # Dynamic mass step update:
+    diff_largest = max( abs(dR/R[1]), abs(dP/P[1]), abs(dL/L[1]), abs(dT/T[1]) )
+    
+    if diff_largest > diff_max:
+        if dm < dm_min: # comparison is "reverse" since dm is negative
+            dm *= 0.9
+    elif diff_largest < diff_min:
+        if dm > dm_max:
+            dm *= 1.1
+
+    M += dm
 
     # Reset variables so they are ready for the next iteration:
     R[0]   = R[1]
@@ -361,9 +358,8 @@ for i in range(n):
     if rho <= 0 or R[0] <= 0 or P[0] <= 0 or L[0] <= 0 or P_rad <= 0 \
        or P_gas <= 0 or T[0] <= 0:
         print "\nWARNING!\nSomething dropped below 0. Simulation stopped."
-        print "\nProgress = %d / %d =%11.7f %%" % (i, n, 100.*i/n)
         print "dm  =", dm
-        print "M   =", M[i]  / M0,   "M0"
+        print "M   =", M  / M0,   "M0"
         print "rho =", rho   / rho0, "rho0"
         print "R   =", R[0]  / R0,   "R0"
         print "P   =", P[0]  / P0,   "P0"
@@ -376,6 +372,6 @@ for i in range(n):
         break
 
 outfile.write("%g %f %g %g %g %g %g %g %g" \
-              % (dm, M[i], rho, R[0], P[0], L[0], T[0], eps, kap)) # save last point
+              % (dm, M, rho, R[0], P[0], L[0], T[0], eps, kap)) # save last point
 outfile.close()
 

@@ -107,31 +107,14 @@ diff_max = 0.01
 
 
 # Make placeholders for variables:
-array_size = 1 # + 1
-
+L   = L0
+R   = R0
+T   = T0
+P   = P0
+M   = M0
 rho   = rho0
 P_rad = P_rad0
 P_gas = P_gas0
-
-L      = np.zeros(array_size+1)
-L[0]   = L0
-
-R      = np.zeros(array_size+1)
-R[0]   = R0
-
-T      = np.zeros(array_size+1)
-T[0]   = T0
-
-P      = np.zeros(array_size+1)
-P[0]   = P0
-
-M      = M0
-
-#rho      = np.zeros(array_size+1)
-#P_rad    = np.zeros(array_size+1)
-#P_gas    = np.zeros(array_size+1)
-
-
 
 # Particle list:
 class Particle:
@@ -277,57 +260,57 @@ while True:
 
 
     # Parameters that can be found instantaneously:
-    P_rad = a / 3. * T[0]**4
-    P_gas = P[0] - P_rad
-    rho   = P_gas * mu * u / (k * T[0])
+    P_rad = a / 3. * T**4
+    P_gas = P - P_rad
+    rho   = P_gas * mu * u / (k * T)
 
     # The sum of the reaction rates times the energy they produce:
-    eps =   rate(H  , H,   rho, T[0]) * Q_123 \
-          + rate(He3, He3, rho, T[0]) * Q_1   \
-          + rate(He3, He4, rho, T[0]) * Q_23  \
-          + rate(Be7, e_,  rho, T[0]) * Q_2a  \
-          + rate(Li7, H,   rho, T[0]) * Q_2b  \
-          + rate(Be7, H,   rho, T[0]) * Q_3
+    eps =   rate(H  , H,   rho, T) * Q_123 \
+          + rate(He3, He3, rho, T) * Q_1   \
+          + rate(He3, He4, rho, T) * Q_23  \
+          + rate(Be7, e_,  rho, T) * Q_2a  \
+          + rate(Li7, H,   rho, T) * Q_2b  \
+          + rate(Be7, H,   rho, T) * Q_3
     eps *=  avogadro_inverse # does this here to avoid doing it several times
 
-    kap = kappa(T[0], rho) # find opacity
+    kap = kappa(T, rho) # find opacity
 
     # Sometimes print out current progress in terminal and outfile:
     if i % resolution == 0:
         print "dm  =", dm
         print "M   =", M     / M0,   "M0"
         print "rho =", rho   / rho0, "rho0"
-        print "R   =", R[0]  / R0,   "R0"
-        print "P   =", P[0]  / P0,   "P0"
+        print "R   =", R     / R0,   "R0"
+        print "P   =", P     / P0,   "P0"
         print "P_r =", P_rad / P0,   "P0"
         print "P_g =", P_gas / P0,   "P0"
-        print "L   =", L[0]  / L0,   "L0"
-        print "T   =", T[0]  / T0,   "T0"
+        print "L   =", L     / L0,   "L0"
+        print "T   =", T     / T0,   "T0"
         print "eps =", eps
         print "kap =", kap
         outfile.write("%g %f %g %g %g %g %g %g %g\n" \
-                      % (dm, M, rho, R[0], P[0], L[0], T[0], eps, kap))
+                      % (dm, M, rho, R, P, L, T, eps, kap))
             # writes the current result to file for later plotting
     i += 1
 
     # Differential equations solved with Forward Euler:
-    dR = + 1. / (4. * np.pi * R[0]*R[0] * rho) * dm
-    dP = - G * M / (4. * np.pi * R[1]*R[1]*R[1]*R[1]) * dm
-    dL = + eps * dm
+    dR = 1. / (4. * np.pi * R*R * rho) * dm
+    dP = - G * M / (4. * np.pi * R*R*R*R) * dm
+    dL = eps * dm
     # dT not determined before convection check is done
 
     # Check for convection:
-    nabla_rad = 3. * kap * L[0] * P[0] / \
-                ( 64. * np.pi * sigma * T[0]*T[0]*T[0]*T[0] * G * M )
-    #nabla_rad = (np.log(T[1] - np.log(T[0])) / (np.log(P[1] - np.log(P[0]))
+    nabla_rad = 3. * kap * L * P / \
+                ( 64. * np.pi * sigma * T*T*T*T * G * M )
+    #nabla_rad = (np.log(T - np.log(T)) / (np.log(P - np.log(P))
     # alternative?
     
     if nabla_rad > nabla_ad: # convective unstable => convection happens
-        g = G * M / (R[1])     # gravity acceleration
-        H_P = P[1] / (g * rho) # pressure scale height
+        g = G * M / (R)     # gravity acceleration
+        H_P = P / (g * rho) # pressure scale height
         # TODO: H_P different for ideal gas?
         
-        U = 64 * sigma * T[0]*T[0]*T[0] / (3 * kap * rho*rho * c_P) \
+        U = 64 * sigma * T*T*T / (3 * kap * rho*rho * c_P) \
             * (H_P * g * delta)**0.5 # internal energy
         
         l_m = alpha * H_P # mixing length
@@ -340,20 +323,16 @@ while True:
         
         nabla = xi*xi + K * xi + nabla_ad
         
-        dT = nabla * T[0] / P[1] * dP
+        dT = nabla * T / P * dP
 
     else: # convective stable => no convection
-        dT = - 3 * kap * L[1] \
+        dT = - 3 * kap * L \
              / ( 256. * np.pi*np.pi * sigma \
-             * R[1]*R[1]*R[1]*R[1] * T[0]*T[0]*T[0] ) * dm
+             * R*R*R*R * T*T*T ) * dm
 
-    R[1] = R[0] + dR
-    P[1] = P[0] + dP
-    L[1] = L[0] + dL
-    T[1] = T[0] + dT
     
     # Dynamic mass step update:
-    diff_largest = max( abs(dR/R[1]), abs(dP/P[1]), abs(dL/L[1]), abs(dT/T[1]) )
+    diff_largest = max( abs(dR/R), abs(dP/P), abs(dL/L), abs(dT/T) )
     
     if diff_largest > diff_max:
         if dm < dm_min: # comparison is "reverse" since dm is negative
@@ -362,35 +341,36 @@ while True:
         if dm > dm_max:
             dm *= 1.1
 
+
+    # Update parameters for next iteration:
+    R += dR
+    P += dP
+    L += dL
+    T += dT
     M += dm
 
-    # Reset variables so they are ready for the next iteration:
-    R[0]   = R[1]
-    P[0]   = P[1]
-    L[0]   = L[1]
-    T[0]   = T[1]
 
     # Check if anything dropped below zero:
     # If this happens the system will stop making physical sense,
     # so the simulation should be stopped.
     # When it happens, print and save the last values of all parameters.
-    if rho <= 0 or R[0] <= 0 or P[0] <= 0 or L[0] <= 0 or P_rad <= 0 \
-       or P_gas <= 0 or T[0] <= 0:
+    if rho <= 0 or R <= 0 or P <= 0 or L <= 0 or P_rad <= 0 \
+       or P_gas <= 0 or T <= 0:
         print "\nWARNING!\nSomething dropped below 0. Simulation stopped."
         print "dm  =", dm
         print "M   =", M  / M0,   "M0"
         print "rho =", rho   / rho0, "rho0"
-        print "R   =", R[0]  / R0,   "R0"
-        print "P   =", P[0]  / P0,   "P0"
+        print "R   =", R  / R0,   "R0"
+        print "P   =", P  / P0,   "P0"
         print "P_r =", P_rad / P0,   "P0"
         print "P_g =", P_gas / P0,   "P0"
-        print "L   =", L[0]  / L0,   "L0"
-        print "T   =", T[0]  / T0,   "T0"
+        print "L   =", L  / L0,   "L0"
+        print "T   =", T  / T0,   "T0"
         print "eps =", eps
         print "kap =", kap
         break
 
 outfile.write("%g %f %g %g %g %g %g %g %g" \
-              % (dm, M, rho, R[0], P[0], L[0], T[0], eps, kap)) # save last point
+              % (dm, M, rho, R, P, L, T, eps, kap)) # save last point
 outfile.close()
 

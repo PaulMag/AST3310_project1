@@ -16,13 +16,6 @@ MeV   = 1.602176565e-13 # [J]
 avogadro_inverse = 1 / 6.0221413e23 # the inverse of Avogadros number
 
 
-# Convection parameters:
-nabla_ad = 2. / 5 # adiabatic temperature gradient for ideal gas
-alpha    = 1.     # mixing length
-delta    = 1.     # ideal gases
-con_stable = True # initial assumption
-
-
 # Ratios of different particles for star:
 X     = 0.7   # hydrogen
 Y_3   = 1e-10 # helium3
@@ -32,6 +25,13 @@ Z_7Li = 1e-13 # lithium7
 Z_7Be = 1e-13 # beryllium7
 
 mu = 1. / (2*X + 3*Y/4. + Z/2.) # average particle mass in atomic mass units
+
+
+# Convection parameters:
+nabla_ad = 2. / 5 # adiabatic temperature gradient for ideal gas
+alpha    = 1.     # mixing length
+delta    = 1.     # ideal gases
+c_P      = 5/2. * k / (mu * u) # heat capacity for constant pressure
 
 
 # Initial physical parameters for star:
@@ -305,28 +305,47 @@ while True:
         print "T   =", T[0]  / T0,   "T0"
         print "eps =", eps
         print "kap =", kap
-        print con_stable
         outfile.write("%g %f %g %g %g %g %g %g %g\n" \
                       % (dm, M, rho, R[0], P[0], L[0], T[0], eps, kap))
             # writes the current result to file for later plotting
     i += 1
 
-    # TODO: Check for convective stabbility:
-    #nabla_rad = (np.log(T[1] - np.log(T[0])) / (np.log(P[1] - np.log(P[0]))
+    # Differential equations solved with Forward Euler:
+    dR = + 1. / (4. * np.pi * R[0]*R[0] * rho) * dm
+    dP = - G * M / (4. * np.pi * R[1]*R[1]*R[1]*R[1]) * dm
+    dL = + eps * dm
+    # dT not determined before convection check is done
+
+    # Check for convection:
     nabla_rad = 3. * kap * L[0] * P[0] / \
                 ( 64. * np.pi * sigma * T[0]*T[0]*T[0]*T[0] * G * M )
+    #nabla_rad = (np.log(T[1] - np.log(T[0])) / (np.log(P[1] - np.log(P[0]))
+    # alternative?
     
-    if nabla_rad > nabla_ad:
-        con_stable = False
-    else:
-        con_stable = True
+    if nabla_rad > nabla_ad: # convective unstable => convection happens
+        g = G * M / (R[1])     # gravity acceleration
+        H_P = P[1] / (g * rho) # pressure scale height
+        # TODO: H_P different for ideal gas?
+        
+        U = 64 * sigma * T[0]*T[0]*T[0] / (3 * kap * rho*rho * c_P) \
+            * (H_P * g * delta)**0.5 # internal energy
+        
+        l_m = alpha * H_P # mixing length
+        
+        R = U / l_m
+        K = 4 * R
+        
+        xi = np.roots([1./R, 1, K, nabla_ad-nabla_rad]) # 2 complex and 1 real
+        xi = float( np.real( xi[np.imag(xi) == 0] ) ) # keeps the real root only
+        
+        nabla = xi*xi + K * xi + nabla_ad
+        
+        dT = nabla * T[0] / P[1] * dP
 
-    # Differential equations solved with Forward Euler:
-    dR = + 1. / (4. * np.pi * R[0]**2 * rho) * dm
-    dP = - G * M / (4. * np.pi * R[1]**4) * dm
-    dL = + eps * dm
-    dT = - 3 * kap * L[1] \
-                  / (256. * np.pi*np.pi * sigma * R[1]**4 * T[0]**3) * dm
+    else: # convective stable => no convection
+        dT = - 3 * kap * L[1] \
+             / ( 256. * np.pi*np.pi * sigma \
+             * R[1]*R[1]*R[1]*R[1] * T[0]*T[0]*T[0] ) * dm
 
     R[1] = R[0] + dR
     P[1] = P[0] + dP

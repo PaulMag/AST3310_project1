@@ -242,6 +242,16 @@ def kappa(T, rho):
     return kappa * 1000 # convert to [kg/m**3]
 
 
+    def flux_tot():
+        return L / (4 * np.pi * R*R)
+
+    def flux_rad():
+        return 0.75 * a * c * G * T*T*T*T * M / (kap * P * R*R)
+
+    def flux_con():
+        return flux_tot() - flux_rad()
+
+
 # Data output:
 if len(sys.argv) < 2: # if no output name given
     sys.argv.append("test") # default name

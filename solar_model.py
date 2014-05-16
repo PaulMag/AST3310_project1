@@ -249,7 +249,10 @@ def flux_rad():
     return 0.75 * a * c * G * T*T*T*T * M / (kap * P * R*R)
 
 def flux_con():
-    return flux_tot() - flux_rad()
+    """
+    Always all flux_rad() first, then flux_con().
+    """
+    return flux_tot() - F_rad
 
 
 def print_to_screen():
@@ -267,13 +270,15 @@ def print_to_screen():
     print "T   =", T     / T0,   "T0"
     print "eps =", eps
     print "kap =", kap
+    print "F_r =", F_rad
+    print "F_c =", F_con
 
 def print_to_file():
     """
     Writes the current result to file for later plotting.
     """
-    outfile.write("%g %f %g %g %g %g %g %g %g\n" \
-          % (dm, M, rho, R, P, L, T, eps, kap))
+    outfile.write("%g %f %g %g %g %g %g %g %g %g %g\n" \
+          % (dm, M, rho, R, P, L, T, eps, kap, F_rad, F_con))
 
 
 # Data output:
@@ -311,6 +316,11 @@ while True:
 
     # Sometimes print out current progress in terminal and outfile:
     if i % resolution == 0:
+        # Find fluxes :
+        # (these are not used in calculations, so only happens here)
+        F_rad = flux_rad()
+        F_con = flux_con()
+        
         print_to_screen()
         print_to_file()
     i += 1
@@ -370,7 +380,6 @@ while True:
     L += dL
     T += dT
     M += dm
-
 
     # Check if anything dropped below zero:
     # If this happens the system will stop making physical sense,

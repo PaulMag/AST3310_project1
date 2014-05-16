@@ -304,7 +304,7 @@ while True:
     i += 1
 
     # Differential equations solved with Forward Euler:
-    dR = 1. / (4. * np.pi * R*R * rho) * dm
+    dR = 1. / (4. * np.pi * R*R * rho) * dm;
     dP = - G * M / (4. * np.pi * R*R*R*R) * dm
     dL = eps * dm
     # dT not determined before convection check is done
@@ -325,10 +325,10 @@ while True:
         
         l_m = alpha * H_P # mixing length
         
-        R = U / l_m
-        K = 4 * R
+        RR = U / l_m # named RR to distinguish from radius R
+        K = 4 * RR
         
-        xi = np.roots([1./R, 1, K, nabla_ad-nabla_rad]) # 2 complex and 1 real
+        xi = np.roots([1./RR, 1, K, nabla_ad-nabla_rad]) # 2 complex and 1 real
         xi = float( np.real( xi[np.imag(xi) == 0] ) ) # keeps the real root only
         
         nabla = xi*xi + K * xi + nabla_ad

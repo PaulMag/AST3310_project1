@@ -242,14 +242,38 @@ def kappa(T, rho):
     return kappa * 1000 # convert to [kg/m**3]
 
 
-    def flux_tot():
-        return L / (4 * np.pi * R*R)
+def flux_tot():
+    return L / (4 * np.pi * R*R)
 
-    def flux_rad():
-        return 0.75 * a * c * G * T*T*T*T * M / (kap * P * R*R)
+def flux_rad():
+    return 0.75 * a * c * G * T*T*T*T * M / (kap * P * R*R)
 
-    def flux_con():
-        return flux_tot() - flux_rad()
+def flux_con():
+    return flux_tot() - flux_rad()
+
+
+def print_to_screen():
+    """
+    Writes the current result to screen for overseeing progress and debugging.
+    """
+    print "dm  =", dm
+    print "M   =", M     / M0,   "M0"
+    print "rho =", rho   / rho0, "rho0"
+    print "R   =", R     / R0,   "R0"
+    print "P   =", P     / P0,   "P0"
+    print "P_r =", P_rad / P0,   "P0"
+    print "P_g =", P_gas / P0,   "P0"
+    print "L   =", L     / L0,   "L0"
+    print "T   =", T     / T0,   "T0"
+    print "eps =", eps
+    print "kap =", kap
+
+def print_to_file():
+    """
+    Writes the current result to file for later plotting.
+    """
+    outfile.write("%g %f %g %g %g %g %g %g %g\n" \
+          % (dm, M, rho, R, P, L, T, eps, kap))
 
 
 # Data output:
@@ -287,20 +311,8 @@ while True:
 
     # Sometimes print out current progress in terminal and outfile:
     if i % resolution == 0:
-        print "dm  =", dm
-        print "M   =", M     / M0,   "M0"
-        print "rho =", rho   / rho0, "rho0"
-        print "R   =", R     / R0,   "R0"
-        print "P   =", P     / P0,   "P0"
-        print "P_r =", P_rad / P0,   "P0"
-        print "P_g =", P_gas / P0,   "P0"
-        print "L   =", L     / L0,   "L0"
-        print "T   =", T     / T0,   "T0"
-        print "eps =", eps
-        print "kap =", kap
-        outfile.write("%g %f %g %g %g %g %g %g %g\n" \
-                      % (dm, M, rho, R, P, L, T, eps, kap))
-            # writes the current result to file for later plotting
+        print_to_screen()
+        print_to_file()
     i += 1
 
     # Differential equations solved with Forward Euler:
@@ -366,18 +378,8 @@ while True:
     # When it happens, print and save the last values of all parameters.
     if rho <= 0 or R <= 0 or P <= 0 or L <= 0 or P_rad <= 0 \
        or P_gas <= 0 or T <= 0:
-        print "\nWARNING!\nSomething dropped below 0. Simulation stopped."
-        print "dm  =", dm
-        print "M   =", M  / M0,   "M0"
-        print "rho =", rho   / rho0, "rho0"
-        print "R   =", R  / R0,   "R0"
-        print "P   =", P  / P0,   "P0"
-        print "P_r =", P_rad / P0,   "P0"
-        print "P_g =", P_gas / P0,   "P0"
-        print "L   =", L  / L0,   "L0"
-        print "T   =", T  / T0,   "T0"
-        print "eps =", eps
-        print "kap =", kap
+        print_to_screen()
+        print_to_file()
         break
 
 outfile.write("%g %f %g %g %g %g %g %g %g" \

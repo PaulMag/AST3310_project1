@@ -238,9 +238,12 @@ def flux_rad():
 
 def flux_con():
     """
-    Always all flux_rad() first, then flux_con().
+    Always call flux_rad() first, then flux_con().
     """
-    return flux_tot() - F_rad
+    if nabla_rad > nabla_ad: # convective unstable => convection happens
+        return flux_tot() - F_rad
+    else: # no convection
+        return 0.
 
 
 def print_to_screen():
@@ -326,20 +329,6 @@ while True:
 
     kap = kappa(T, rho) # find opacity
 
-    # Sometimes print out current progress in terminal and outfile:
-    if i >= resolution:
-        # Find fluxes :
-        # (these are not used in calculations, so only happens here)
-        F_rad = flux_rad()
-        F_con = flux_con()
-        
-        print_to_screen()
-        print_to_file()
-        
-        i = 0
-        resolution = get_resolution()
-    i += 1
-
     # Differential equations solved with Forward Euler:
     dR = 1. / (4. * np.pi * R*R * rho) * dm;
     dP = - G * M / (4. * np.pi * R*R*R*R) * dm
@@ -351,7 +340,7 @@ while True:
                 ( 64. * np.pi * sigma * T*T*T*T * G * M )
     #nabla_rad = (np.log(T - np.log(T)) / (np.log(P - np.log(P))
     # alternative?
-    
+
     if nabla_rad > nabla_ad: # convective unstable => convection happens
         g = G * M / (R)     # gravity acceleration
         H_P = P / (g * rho) # pressure scale height
@@ -377,6 +366,19 @@ while True:
              / ( 256. * np.pi*np.pi * sigma \
              * R*R*R*R * T*T*T ) * dm
 
+    # Sometimes print out current progress in terminal and outfile:
+    if i >= resolution:
+        # Find fluxes :
+        # (these are not used in calculations, so only happens here)
+        F_rad = flux_rad()
+        F_con = flux_con()
+        
+        print_to_screen()
+        print_to_file()
+        
+        i = 0
+        resolution = get_resolution()
+    i += 1
 
     # Update parameters for next iteration:
     R += dR

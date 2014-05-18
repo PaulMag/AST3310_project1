@@ -307,6 +307,7 @@ dm = - 1e15
 
 diff_min = 0.0005
 diff_max = 0.001
+diff_largest = 0 # declaration only
 
 
 # Integration loop:
@@ -394,6 +395,8 @@ while True:
     # When it happens, print and save the last values of all parameters.
     if rho <= 0 or R <= 0 or P <= 0 or L <= 0 or P_rad <= 0 \
        or P_gas <= 0 or T <= 0:
+        F_rad = flux_rad()
+        F_con = flux_con()
         print_to_screen()
         print_to_file()
         break

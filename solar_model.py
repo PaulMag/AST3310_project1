@@ -259,6 +259,7 @@ def print_to_screen():
     """
     Writes the current result to screen for overseeing progress and debugging.
     """
+    print
     print "dm  =", dm
     print "M   =", M     / M0,   "M0"
     print "rho =", rho   / rho0, "rho0"
@@ -391,7 +392,5 @@ while True:
         print_to_file()
         break
 
-outfile.write("%g %f %g %g %g %g %g %g %g" \
-              % (dm, M, rho, R, P, L, T, eps, kap)) # save last point
 outfile.close()
 

@@ -94,18 +94,6 @@ kappa_x = len(logR_list)
 kappa_y = len(logT_list)
 
 
-# Numerical parameters:
-i = 0
-resolution = 5000 # how often to show progress and write to file
-
-dm_min = - 1e15
-dm_max = - 1e25
-dm = dm_min
-
-diff_min = 0.001
-diff_max = 0.01
-
-
 # Make placeholders for variables:
 L   = L0
 R   = R0
@@ -260,6 +248,8 @@ def print_to_screen():
     Writes the current result to screen for overseeing progress and debugging.
     """
     print
+    print "resolution   =", resolution
+    print "diff_largest =", diff_largest
     print "dm  =", dm
     print "M   =", M     / M0,   "M0"
     print "rho =", rho   / rho0, "rho0"
@@ -295,6 +285,27 @@ outfile = open("data2/" + sys.argv[1] + ".dat", "w")
 outfile.write(sys.argv[2] + "\n")
 
 
+# Numerical parameters:
+resolution = 10 # how often to show progress and write to file (initial value)
+i = 0
+
+def get_resolution():
+    """
+    Assume it is sufficient to print out data when something has changed with 
+    5 %.
+    """
+    diff_largest = max( abs(dR/R), abs(dP/P), abs(dL/L), abs(dT/T) )
+    res = np.log(1.05) / np.log(1 + diff_largest)
+    return int(res)
+
+dm_min = - 1e15
+dm_max = - 1e25
+dm = dm_min
+
+diff_min = 0.001
+diff_max = 0.01
+
+
 # Integration loop:
 while True:
 
@@ -316,7 +327,7 @@ while True:
     kap = kappa(T, rho) # find opacity
 
     # Sometimes print out current progress in terminal and outfile:
-    if i % resolution == 0:
+    if i >= resolution:
         # Find fluxes :
         # (these are not used in calculations, so only happens here)
         F_rad = flux_rad()
@@ -324,6 +335,9 @@ while True:
         
         print_to_screen()
         print_to_file()
+        
+        i = 0
+        resolution = get_resolution()
     i += 1
 
     # Differential equations solved with Forward Euler:
@@ -387,7 +401,7 @@ while True:
     
     if diff_largest > diff_max:
         if dm < dm_min: # comparison is "reverse" since dm is negative
-            dm *= 0.9
+            dm *= 0.1
     elif diff_largest < diff_min:
         if dm > dm_max:
             dm *= 1.1

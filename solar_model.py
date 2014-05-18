@@ -363,17 +363,6 @@ while True:
              / ( 256. * np.pi*np.pi * sigma \
              * R*R*R*R * T*T*T ) * dm
 
-    
-    # Dynamic mass step update:
-    diff_largest = max( abs(dR/R), abs(dP/P), abs(dL/L), abs(dT/T) )
-    
-    if diff_largest > diff_max:
-        if dm < dm_min: # comparison is "reverse" since dm is negative
-            dm *= 0.9
-    elif diff_largest < diff_min:
-        if dm > dm_max:
-            dm *= 1.1
-
 
     # Update parameters for next iteration:
     R += dR
@@ -391,6 +380,18 @@ while True:
         print_to_screen()
         print_to_file()
         break
+
+
+    # Dynamic mass step update:
+    diff_largest = max( abs(dR/R), abs(dP/P), abs(dL/L), abs(dT/T) )
+    
+    if diff_largest > diff_max:
+        if dm < dm_min: # comparison is "reverse" since dm is negative
+            dm *= 0.9
+    elif diff_largest < diff_min:
+        if dm > dm_max:
+            dm *= 1.1
+
 
 outfile.close()
 

@@ -292,18 +292,18 @@ i = 0
 def get_resolution():
     """
     Assume it is sufficient to print out data when something has changed with 
-    5 %.
+    10 %.
     """
     diff_largest = max( abs(dR/R), abs(dP/P), abs(dL/L), abs(dT/T) )
-    res = np.log(1.05) / np.log(1 + diff_largest)
+    res = np.log(1.1) / np.log(1 + diff_largest)
     return int(res)
 
-dm_min = - 1e15
-dm_max = - 1e25
-dm = dm_min
+dm_min = - 1e10
+dm_max = - 1e24
+dm = - 1e15
 
-diff_min = 0.001
-diff_max = 0.01
+diff_min = 0.0005
+diff_max = 0.001
 
 
 # Integration loop:
@@ -401,7 +401,7 @@ while True:
     
     if diff_largest > diff_max:
         if dm < dm_min: # comparison is "reverse" since dm is negative
-            dm *= 0.1
+            dm *= 0.1 * (diff_max / diff_largest)
     elif diff_largest < diff_min:
         if dm > dm_max:
             dm *= 1.1

@@ -40,66 +40,59 @@ for line in infile:
 
 infile.close()
 
-rho0 = rho[1]
-P0   = P[1]
 
-dm  = - np.array(dm)         # [kg]
-M   = np.array(M)   / M[0]   # [M0]
-rho = np.array(rho) / rho[0] # [rho0]
-R   = np.array(R)   / R[0]   # [R0]
-P   = np.array(P)   / (1e3*P[0]) # [1e3 P0]
-L   = np.array(L)   / L[0]   # [L0]
-T   = np.array(T)   / 1e7    # [1ey K]
-eps = np.array(eps)          # [W/kg]
-kap = np.array(kap) / 1e2    # [1e3 cm^2/g]
+dm  = - np.array(dm) # SI-units
+M   = np.array(M)
+rho = np.array(rho)
+R   = np.array(R)
+P   = np.array(P)
+L   = np.array(L)
+T   = np.array(T)
+eps = np.array(eps)
+kap = np.array(kap)
 
 F_r = np.array(F_r)
 F_c = np.array(F_c)
-
 F_t = F_r + F_c
 
-F_r /= F_t
-F_c /= F_t
-
-
+R_sun = 6.96e8
+R_info = "R0 = %4.1f R_sun" % (R[0] / R_sun)
+R /= R[0]
 
 # ************************************************************ #
 plt.figure(); plt.hold("on")
+plt.title("Parameters,  " + R_info, fontsize=18)
 
 plt.grid('on')
 plt.xlabel("radius [R0]")
-#plt.title("rho0 = %g kg/m^3 ,  P0 = %G Pa" % (rho0, P0), fontsize=18)
 
-plt.plot(R, rho)
-plt.plot(R, M)
-plt.plot(R, P)
-plt.plot(R, L)
-plt.plot(R, T)
-plt.plot(R, eps)
-plt.plot(R, kap)
+plt.plot(R, M / M[0])
+plt.plot(R, np.log10(P / (1e3 * P[0])))
+plt.plot(R, L / L[0])
+plt.plot(R, np.log10(T / 1e3))
 
-plt.legend(["rho [rho0]", \
-            "M [M0]", "P [1e3 P0]", "L [L0]", "T [1e7 K]", \
-            "eps [W/kg]", "kappa [1e3 cm^2/g]"], \
+plt.legend(["M [M0]", "P [log10(1e3 P0)]", "L [L0]", "T [log10(1e3 K])"], \
             loc="best")
 # ************************************************************ #
 plt.figure()
+plt.title("Mass step distribution,  " + R_info, fontsize=18)
 
 plt.grid('on')
 plt.xlabel("radius [R0]")
 
-plt.plot(R, dm, "b.")
+plt.plot(R, np.log10(dm), "b.")
 
-plt.legend(["dm [-kg]"])
+plt.legend(["dm [log10(-kg)]"])
 # ************************************************************ #
 plt.figure()
+plt.title("Flux relations,  " + R_info, fontsize=18)
 
 plt.grid('on')
 plt.xlabel("radius [R0]")
 plt.ylabel("ratio of F_tot")
 
-plt.plot(R, F_r)
-plt.plot(R, F_c)
+plt.plot(R, F_r / F_t)
+plt.plot(R, F_c / F_t)
 
 plt.legend(["F_rad", "F_con"])
 # ************************************************************ #

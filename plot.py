@@ -115,7 +115,6 @@ plt.title("Energy production of PP-chains,  " + R_info, fontsize=18)
 plt.grid('on')
 plt.xlabel("radius [R0]")
 plt.ylabel("log10(N_a * W / kg)")
-plt.axis([0, 1, -50, 25]) # this may be adjusted for each situation
 
 plt.plot(R, np.log10(eprod_123))
 plt.plot(R, np.log10(eprod_1))

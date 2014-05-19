@@ -67,38 +67,39 @@ F_c /= F_t
 plt.figure(); plt.hold("on")
 
 plt.grid('on')
-plt.xlabel("mass [M0]")
+plt.xlabel("radius [R0]")
 #plt.title("rho0 = %g kg/m^3 ,  P0 = %G Pa" % (rho0, P0), fontsize=18)
 
-plt.plot(M, rho)
-plt.plot(M, R)
-plt.plot(M, P)
-plt.plot(M, L)
-plt.plot(M, T)
-plt.plot(M, eps)
-plt.plot(M, kap)
+plt.plot(R, rho)
+plt.plot(R, M)
+plt.plot(R, P)
+plt.plot(R, L)
+plt.plot(R, T)
+plt.plot(R, eps)
+plt.plot(R, kap)
+
 plt.legend(["rho [rho0]", \
-            "R [R0]", "P [1e3 P0]", "L [L0]", "T [1e7 K]", \
+            "M [M0]", "P [1e3 P0]", "L [L0]", "T [1e7 K]", \
             "eps [W/kg]", "kappa [1e3 cm^2/g]"], \
             loc="best")
 # ************************************************************ #
 plt.figure()
 
 plt.grid('on')
-plt.xlabel("mass [M0]")
+plt.xlabel("radius [R0]")
 
-plt.plot(M, dm, "b.")
+plt.plot(R, dm, "b.")
 
 plt.legend(["dm [-kg]"])
 # ************************************************************ #
 plt.figure()
 
 plt.grid('on')
-plt.xlabel("mass [M0]")
+plt.xlabel("radius [R0]")
 plt.ylabel("ratio of F_tot")
 
-plt.plot(M, F_r)
-plt.plot(M, F_c)
+plt.plot(R, F_r)
+plt.plot(R, F_c)
 
 plt.legend(["F_rad", "F_con"])
 # ************************************************************ #

@@ -343,7 +343,7 @@ while True:
     # alternative?
 
     if nabla_rad > nabla_ad: # convective unstable => convection happens
-        g = G * M / (R)     # gravity acceleration
+        g = G * M / (R*R)     # gravity acceleration
         H_P = P / (g * rho) # pressure scale height
         # TODO: H_P different for ideal gas?
         

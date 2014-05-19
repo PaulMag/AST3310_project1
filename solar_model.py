@@ -356,7 +356,7 @@ while True:
         K = 4 * RR
         
         xi = np.roots([1./RR, 1, K, nabla_ad-nabla_rad]) # 2 complex and 1 real
-        xi = float( np.real( xi[np.imag(xi) == np.min(np.imag(xi))] ) )
+        xi = float( np.real( xi[np.imag(xi) == np.min(np.abs(np.imag(xi)))] ) )
             # keeps the real root only
         
         nabla = xi*xi + K * xi + nabla_ad

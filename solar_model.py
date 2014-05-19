@@ -234,15 +234,18 @@ def flux_tot():
     return L / (4 * np.pi * R*R)
 
 def flux_rad():
-    return 0.75 * a * c * G * T*T*T*T * M / (kap * P * R*R)
+    if convection:
+        return 0.75 * a * c * G * T*T*T*T * M / (kap * P * R*R) * nabla
+    else:
+        return flux_tot()
 
 def flux_con():
     """
     Always call flux_rad() first, then flux_con().
     """
-    if nabla_rad > nabla_ad: # convective unstable => convection happens
+    if convection:
         return flux_tot() - F_rad
-    else: # no convection
+    else:
         return 0.
 
 
@@ -349,8 +352,13 @@ while True:
                 ( 64. * np.pi * sigma * T*T*T*T * G * M )
     #nabla_rad = (np.log(T - np.log(T)) / (np.log(P - np.log(P))
     # alternative?
-
     if nabla_rad > nabla_ad: # convective unstable => convection happens
+        convection = True
+    else: # convective stable => no convection
+        convection = False
+
+
+    if convection:
         g = G * M / (R*R)     # gravity acceleration
         H_P = P / (g * rho) # pressure scale height
         # TODO: H_P different for ideal gas?
@@ -371,7 +379,7 @@ while True:
         
         dT = nabla * T / P * dP
 
-    else: # convective stable => no convection
+    else:
         dT = - 3 * kap * L \
              / ( 256. * np.pi*np.pi * sigma \
              * R*R*R*R * T*T*T ) * dm

@@ -297,9 +297,9 @@ if len(sys.argv) < 4: # if no info given
     sys.argv.append("") # set empty string
 
 # Output file for results cmd-line-arg as filename:
-outfile = open("data2/" + sys.argv[1] + ".dat", "w")
+outfile = open("data2/" + sys.argv[2] + ".dat", "w")
 # If desirable, write information about current run on first line:
-outfile.write(sys.argv[2] + "\n")
+outfile.write(sys.argv[3] + "\n")
 
 
 # Numerical parameters:

@@ -22,6 +22,10 @@ eps = []
 kap = []
 F_r = []
 F_c = []
+eprod_123 = []
+eprod_1   = []
+eprod_2   = []
+eprod_3   = []
 
 for line in infile:
     line = line.split()
@@ -37,6 +41,10 @@ for line in infile:
     kap.append(float(line[8]))
     F_r.append(float(line[9]))
     F_c.append(float(line[10]))
+    eprod_123.append(float(line[11]))
+    eprod_1.append(float(line[12]))
+    eprod_2.append(float(line[13]))
+    eprod_3.append(float(line[14]))
 
 infile.close()
 
@@ -55,9 +63,14 @@ F_r = np.array(F_r)
 F_c = np.array(F_c)
 F_t = F_r + F_c
 
+eprod_123 = np.array(eprod_123)
+eprod_1   = np.array(eprod_1)
+eprod_2   = np.array(eprod_2)
+eprod_3   = np.array(eprod_3)
+
 R_sun = 6.96e8
 R_info = "R0 = %4.1f R_sun" % (R[0] / R_sun)
-R /= R[0]
+R /= R[0] # [R0]
 
 # ************************************************************ #
 plt.figure(); plt.hold("on")
@@ -82,7 +95,7 @@ plt.xlabel("radius [R0]")
 
 plt.plot(R, np.log10(dm), "b.")
 
-plt.legend(["dm [log10(-kg)]"])
+plt.legend(["dm [log10(-kg)]"], loc="best")
 # ************************************************************ #
 plt.figure()
 plt.title("Flux relations,  " + R_info, fontsize=18)
@@ -94,7 +107,22 @@ plt.ylabel("ratio of F_tot")
 plt.plot(R, F_r / F_t)
 plt.plot(R, F_c / F_t)
 
-plt.legend(["F_rad", "F_con"])
+plt.legend(["F_rad", "F_con"], loc="best")
+# ************************************************************ #
+plt.figure()
+plt.title("Energy production of PP-chains,  " + R_info, fontsize=18)
+
+plt.grid('on')
+plt.xlabel("radius [R0]")
+plt.ylabel("log10(N_a * W / kg)")
+plt.axis([0, 1, -50, 25]) # this may be adjusted for each situation
+
+plt.plot(R, np.log10(eprod_123))
+plt.plot(R, np.log10(eprod_1))
+plt.plot(R, np.log10(eprod_2))
+plt.plot(R, np.log10(eprod_3))
+
+plt.legend(["pp + pd", "PP1", "PP2", "PP3"], loc="best")
 # ************************************************************ #
 
 plt.show()

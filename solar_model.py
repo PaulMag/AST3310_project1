@@ -315,8 +315,8 @@ def get_resolution():
     diff_largest = max( abs(dR/R), abs(dP/P), abs(dL/L), abs(dT/T) )
     res = np.log(1.1) / np.log(1 + diff_largest)
     
-    if resolution < 10 and res > 100: # avoids too sudden increases
-        return 10 * (resolution + 1)
+    if res > 5 * resolution: # avoids too sudden increases in the beginning
+        res = 5 * resolution + 1 # +1 in case resolution was 0
     
     if res > 10000: # Set a maximum cap on the printout intervals.
         return 10000

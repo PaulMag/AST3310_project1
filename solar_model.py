@@ -274,13 +274,19 @@ def print_to_screen():
     print "kap =", kap
     print "F_r =", F_rad
     print "F_c =", F_con
+    print "PP_123 =", eprod_123
+    print "PP_1   =", eprod_1
+    print "PP_2   =", eprod_2
+    print "PP_3   =", eprod_3
+    print "PP_23  =", eprod_23
 
 def print_to_file():
     """
     Writes the current result to file for later plotting.
     """
-    outfile.write("%g %f %g %g %g %g %g %g %g %g %g\n" \
-          % (dm, M, rho, R, P, L, T, eps, kap, F_rad, F_con))
+    outfile.write("%g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" \
+          % (dm, M, rho, R, P, L, T, eps, kap, F_rad, F_con, \
+             eprod_123, eprod_1, eprod_2, eprod_3, eprod_23))
 
 
 # Data output:
@@ -336,12 +342,13 @@ while True:
     rho   = P_gas * mu * u / (k * T)
 
     # The sum of the reaction rates times the energy they produce:
-    eps =   rate(H  , H,   rho, T) * Q_123 \
-          + rate(He3, He3, rho, T) * Q_1   \
-          + rate(He3, He4, rho, T) * Q_23  \
-          + rate(Be7, e_,  rho, T) * Q_2a  \
-          + rate(Li7, H,   rho, T) * Q_2b  \
-          + rate(Be7, H,   rho, T) * Q_3
+    eprod_123 = rate(H  , H,   rho, T) * Q_123  # Energy production per mass 
+    eprod_1   = rate(He3, He3, rho, T) * Q_1    # for each of the PP-chains.
+    eprod_2   = rate(Be7, e_,  rho, T) * Q_2a + rate(Li7, H,   rho, T) * Q_2b
+    eprod_3   = rate(Be7, H,   rho, T) * Q_3
+    eprod_23  = rate(He3, He4, rho, T) * Q_23
+
+    eps = eprod_123 + eprod_1 + eprod_2 + eprod_3 + eprod_23
     eps *=  avogadro_inverse # does this here to avoid doing it several times
 
     kap = kappa(T, rho) # find opacity

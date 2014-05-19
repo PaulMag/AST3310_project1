@@ -289,7 +289,8 @@ outfile.write(sys.argv[2] + "\n")
 
 
 # Numerical parameters:
-resolution = 10 # how often to show progress and write to file (initial value)
+resolution = 0 # how often to show progress and write to file
+               # initial value 0 so that printout happens on first iteration
 i = 0
 
 def get_resolution():
@@ -299,15 +300,22 @@ def get_resolution():
     """
     diff_largest = max( abs(dR/R), abs(dP/P), abs(dL/L), abs(dT/T) )
     res = np.log(1.1) / np.log(1 + diff_largest)
-    return int(res)
+    
+    if resolution < 10 and res > 100: # avoids too sudden increases
+        return 10 * (resolution + 1)
+    
+    if res > 10000: # Set a maximum cap on the printout intervals.
+        return 10000
+    else:
+        return int(res)
 
-dm_min = - 1e10
-dm_max = - 1e24
-dm = - 1e15
+dm_min = - 1e10 
+dm_max = - 1e26
+dm = - 1e15 # initial dm, will be changed dynamically
 
-diff_min = 0.0005
+diff_min = 0.0005 # declare interval to contain the rate of parameter change within
 diff_max = 0.001
-diff_largest = 0 # declaration only
+diff_largest = 0 # declaration only, will be updated
 
 
 # Integration loop:

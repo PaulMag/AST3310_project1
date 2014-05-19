@@ -83,8 +83,10 @@ plt.plot(R, M / M[0])
 plt.plot(R, np.log10(P / (1e3 * P[0])))
 plt.plot(R, L / L[0])
 plt.plot(R, np.log10(T / 1e3))
+plt.plot(R, np.log10(rho))
 
-plt.legend(["M [M0]", "P [log10(1e3 P0)]", "L [L0]", "T [log10(1e3 K])"], \
+plt.legend(["M [M0]", "P [log10(1e3 P0)]", "L [L0]", "T [log10(1e3 K])", \
+            "rho [log10(kg/m^3)]"], \
             loc="best")
 # ************************************************************ #
 plt.figure()

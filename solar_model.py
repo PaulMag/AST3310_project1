@@ -35,7 +35,12 @@ c_P      = 5/2. * k / (mu * u) # heat capacity for constant pressure
 
 
 # Initial physical parameters for star:
-R0   = 1.0 * 6.96e8   # [m]       # x * R_sun
+try:
+    R0 = float(sys.argv[1]) # Usage: Give R0 as multiple of R_sun.
+except:
+    R0 = 1 # R_sun is default
+R0 *= 6.96e8 # [m] # x * R_sun
+
 L0   = 1.0 * 3.846e26 # [w]       # x * L_sun
 M0   = 1.0 * 1.989e30 # [kg]      # x * M_sun
 T0   = 5770           # [K]       # T_eff_sun
@@ -279,10 +284,10 @@ def print_to_file():
 
 
 # Data output:
-if len(sys.argv) < 2: # if no output name given
+if len(sys.argv) < 3: # if no output name given
     sys.argv.append("test") # default name
     print "Outfile 'data2/test.dat' was made."
-if len(sys.argv) < 3: # if no info given
+if len(sys.argv) < 4: # if no info given
     sys.argv.append("") # set empty string
 
 # Output file for results cmd-line-arg as filename:

@@ -54,12 +54,6 @@ for j in range(1, N_figures + 1):
 
 plt.show()
 
-M_best = min(M_list)
 for i in range(N):
     print "R0 = %5.1f   M_last = %7.5f" % (R0_values[i], M_list[i])
-    
-    if M_list[i] == M_best:
-        i_best = i
-
-print "R0 = %g gave the best result." % R0_values[i_best]
 

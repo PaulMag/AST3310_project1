@@ -422,7 +422,7 @@ while True:
     # so the simulation should be stopped.
     # When it happens, print and save the last values of all parameters.
     if rho <= 0 or R <= 0 or P <= 0 or L <= 0 or P_rad <= 0 \
-       or P_gas <= 0 or T <= 0:
+       or P_gas <= 0 or T <= 0 or M <= 0:
         F_rad = flux_rad()
         F_con = flux_con()
         print_to_screen()

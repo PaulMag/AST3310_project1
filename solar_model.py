@@ -352,7 +352,7 @@ while True:
         
         l_m = alpha * H_P # mixing length
         
-        RR = U / l_m # named RR to distinguish from radius R
+        RR = U / (l_m*l_m) # named RR to distinguish from radius R
         K = 4 * RR
         
         xi = np.roots([1./RR, 1, K, nabla_ad-nabla_rad]) # 2 complex and 1 real

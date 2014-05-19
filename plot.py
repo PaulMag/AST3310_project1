@@ -57,9 +57,14 @@ L   = np.array(L)   / L[0]   # [L0]
 T   = np.array(T)   / 1e7    # [1ey K]
 eps = np.array(eps)          # [W/kg]
 kap = np.array(kap) / 1e2    # [1e3 cm^2/g]
+
 F_r = np.array(F_r)
 F_c = np.array(F_c)
 
+F_t = F_r + F_c
+
+F_r /= F_t
+F_c /= F_t
 
 
 
@@ -95,6 +100,7 @@ plt.figure()
 
 plt.grid('on')
 plt.xlabel("mass [M0]")
+plt.ylabel("ratio of F_tot")
 
 plt.plot(M[::skip], F_r[::skip])
 plt.plot(M[::skip], F_c[::skip])
